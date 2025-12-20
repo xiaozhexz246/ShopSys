@@ -13,7 +13,7 @@ class ProductService:
             session.close()
 
     @staticmethod
-    def add_product(id, name, cost, price, stock):
+    def add_product(id, name, cost, price, stock, category="未设置", location="未设置"):
         """添加新商品"""
         session = SessionLocal()
         try:
@@ -21,10 +21,11 @@ class ProductService:
             existing = session.query(Product).filter(Product.id == id).first()
             if existing:
                 return False, "商品编号已存在！"
-            
+
             new_product = Product(
-                id=id, name=name, 
-                cost_price=cost, sell_price=price, stock=stock
+                id=id, name=name,
+                cost_price=cost, sell_price=price, stock=stock,
+                category=category, location=location
             )
             session.add(new_product)
             session.commit()

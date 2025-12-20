@@ -1,7 +1,7 @@
 # 文件名: ui/cashier_page.py
-from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, 
-                             QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, 
-                             QMessageBox, QSpinBox, QAbstractItemView, QGroupBox)
+from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
+                             QPushButton, QTableWidget, QTableWidgetItem, QHeaderView,
+                             QMessageBox, QSpinBox, QAbstractItemView, QGroupBox, QDoubleSpinBox)
 from PyQt6.QtCore import Qt
 from services.product_service import ProductService
 from services.sale_service import SaleService
@@ -72,8 +72,8 @@ class CashierPage(QWidget):
 
         # --- 购物车表格 ---
         self.cart_table = QTableWidget()
-        self.cart_table.setColumnCount(5)
-        self.cart_table.setHorizontalHeaderLabels(["编号", "名称", "单价", "数量", "小计"])
+        self.cart_table.setColumnCount(6)  # 增加实付金额列
+        self.cart_table.setHorizontalHeaderLabels(["编号", "名称", "单价", "实付金额", "数量", "小计"])
         self.cart_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.cart_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         layout.addWidget(self.cart_table)
@@ -169,34 +169,58 @@ class CashierPage(QWidget):
                 item['qty'] += qty
                 found = True
                 break
-        
+
         if not found:
             self.cart.append({
                 'id': product.id,
                 'name': product.name,
                 'price': product.sell_price,
+                'cost_price': product.cost_price,  # 记录进价用于限制
+                'actual_price': product.sell_price,  # 实付金额，默认等于售价
                 'qty': qty
             })
-        
+
         self.update_cart_table()
 
     def update_cart_table(self):
         """刷新下方购物车表格"""
         self.cart_table.setRowCount(0)
         total_money = 0.0
-        
+
         for idx, item in enumerate(self.cart):
-            subtotal = item['price'] * item['qty']
+            subtotal = item['actual_price'] * item['qty']  # 使用实付金额计算
             total_money += subtotal
-            
+
             self.cart_table.insertRow(idx)
             self.cart_table.setItem(idx, 0, QTableWidgetItem(str(item['id'])))
             self.cart_table.setItem(idx, 1, QTableWidgetItem(str(item['name'])))
             self.cart_table.setItem(idx, 2, QTableWidgetItem(f"{item['price']:.2f}"))
-            self.cart_table.setItem(idx, 3, QTableWidgetItem(str(item['qty'])))
-            self.cart_table.setItem(idx, 4, QTableWidgetItem(f"{subtotal:.2f}"))
-        
+
+            # 实付金额使用可编辑的SpinBox
+            actual_price_spin = QDoubleSpinBox()
+            actual_price_spin.setRange(item['cost_price'], item['price'])  # 范围：进价到售价
+            actual_price_spin.setDecimals(2)
+            actual_price_spin.setValue(item['actual_price'])
+            actual_price_spin.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            # 当值改变时，只更新数据和总金额，不重新刷新整个表格
+            actual_price_spin.valueChanged.connect(lambda value, i=idx: self.update_actual_price_only(i, value))
+            self.cart_table.setCellWidget(idx, 3, actual_price_spin)
+
+            self.cart_table.setItem(idx, 4, QTableWidgetItem(str(item['qty'])))
+            self.cart_table.setItem(idx, 5, QTableWidgetItem(f"{subtotal:.2f}"))
+
         self.total_label.setText(f"总金额: {total_money:.2f} 元")
+
+    def update_actual_price_only(self, cart_index, new_price):
+        """仅更新实付金额，不刷新整个表格（避免无限循环）"""
+        if cart_index < len(self.cart):
+            self.cart[cart_index]['actual_price'] = new_price
+            # 只更新小计和总金额
+            subtotal = new_price * self.cart[cart_index]['qty']
+            self.cart_table.setItem(cart_index, 5, QTableWidgetItem(f"{subtotal:.2f}"))
+            # 重新计算总金额
+            total_money = sum(item['actual_price'] * item['qty'] for item in self.cart)
+            self.total_label.setText(f"总金额: {total_money:.2f} 元")
 
     def clear_cart(self):
         self.cart = []

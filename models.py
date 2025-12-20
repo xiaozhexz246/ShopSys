@@ -17,11 +17,13 @@ class Product(Base):
     __tablename__ = "products"
 
     # 商品编号 (条形码)，设为主键，必须是字符串类型
-    id = Column(String, primary_key=True, index=True) 
+    id = Column(String, primary_key=True, index=True)
     name = Column(String, nullable=False)
     cost_price = Column(Float, default=0.0)  # 进价
     sell_price = Column(Float, default=0.0)  # 售价
     stock = Column(Integer, default=0)       # 库存
+    category = Column(String, default="未设置")  # 商品类别
+    location = Column(String, default="未设置")  # 存放位置
 
     # 关联关系：一个商品可能有多个销售记录
     # sales = relationship("SaleRecord", back_populates="product")

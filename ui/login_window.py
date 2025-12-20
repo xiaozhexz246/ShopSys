@@ -25,12 +25,14 @@ class LoginWindow(QWidget):
         # 2. 用户名输入框
         self.username_input = QLineEdit()
         self.username_input.setPlaceholderText("请输入用户名")
+        self.username_input.returnPressed.connect(self.handle_login)  # 回车登录
         layout.addWidget(self.username_input)
 
         # 3. 密码输入框
         self.password_input = QLineEdit()
         self.password_input.setPlaceholderText("请输入密码")
-        self.password_input.setEchoMode(QLineEdit.EchoMode.Password) # 隐藏密码字符
+        self.password_input.setEchoMode(QLineEdit.EchoMode.Password)  # 隐藏密码字符
+        self.password_input.returnPressed.connect(self.handle_login)  # 回车登录
         layout.addWidget(self.password_input)
 
         # 4. 登录按钮
