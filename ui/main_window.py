@@ -5,10 +5,12 @@ from PyQt6.QtGui import QAction
 from ui.inventory_page import InventoryPage
 from ui.cashier_page import CashierPage
 from ui.stats_page import StatsPage
+from ui.hidden_page import HiddenPage
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self,is_hidden_mode=False):
         super().__init__()
-        self.setWindowTitle("超市售货系统 v1.0")
+        self.is_hidden_mode = is_hidden_mode
+        self.setWindowTitle("超市售货系统 v1.1")
         self.resize(1000, 600) # 默认大小
 
         # 1. 创建核心容器 (堆叠窗口，用来切换页面)
@@ -28,6 +30,10 @@ class MainWindow(QMainWindow):
         self.stack.addWidget(self.page_inventory) # 索引 0
         self.stack.addWidget(self.page_cashier)# 索引1
         self.stack.addWidget(self.page_stats) # Index 2 
+        # --- 核心修改：如果是隐藏模式，加载隐藏页面 ---
+        if self.is_hidden_mode:
+            self.page_hidden = HiddenPage()
+            self.stack.addWidget(self.page_hidden) # Index 3
         # 4. 创建顶部工具栏 (导航栏)
         self.create_toolbar()
 
@@ -54,6 +60,11 @@ class MainWindow(QMainWindow):
         # 点击切换到 Index 2
         action_stats.triggered.connect(lambda: self.stack.setCurrentWidget(self.page_stats))
         toolbar.addAction(action_stats)
+        if self.is_hidden_mode:
+            action_hidden = QAction("🔧 系统维护", self)
+            action_hidden.triggered.connect(lambda: self.stack.setCurrentWidget(self.page_hidden))
+            # 给个特殊的颜色或图标（这里简单用文字区分）
+            toolbar.addAction(action_hidden)
 
         # 动作 4: 退出
         action_exit = QAction("❌ 退出系统", self)

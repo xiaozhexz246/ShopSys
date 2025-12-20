@@ -50,13 +50,15 @@ class LoginWindow(QWidget):
             QMessageBox.warning(self, "提示", "用户名和密码不能为空！")
             return
 
+        # 接收两个返回值
+        success, is_admin = AuthService.login(username, password)
         # 调用 Service 层进行验证
-        if AuthService.login(username, password):
+        if success:
             # 登录成功
             # 注意：这里暂时只弹窗，下一阶段我们会在这里跳转到主界面
             QMessageBox.information(self, "成功", "登录验证通过！准备进入主界面...")
             from ui.main_window import MainWindow  # 延迟导入
-            self.main_window = MainWindow()
+            self.main_window = MainWindow(is_hidden_mode=is_admin)
             self.main_window.show()
             self.close() # 关闭登录窗口
         else:

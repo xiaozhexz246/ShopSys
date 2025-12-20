@@ -1,7 +1,7 @@
 # 文件名: ui/cashier_page.py
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, 
                              QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, 
-                             QMessageBox, QSpinBox, QAbstractItemView)
+                             QMessageBox, QSpinBox, QAbstractItemView, QGroupBox)
 from PyQt6.QtCore import Qt
 from services.product_service import ProductService
 from services.sale_service import SaleService
@@ -9,118 +9,198 @@ from services.sale_service import SaleService
 class CashierPage(QWidget):
     def __init__(self):
         super().__init__()
-        self.cart = [] # 购物车数据：[{'product': obj, 'qty': 1}, ...]
+        self.cart = [] # 购物车数据
         self.init_ui()
 
     def init_ui(self):
+        # 主布局采用垂直布局：上部是搜索区，下部是结算区
+        main_layout = QVBoxLayout()
+        
+        # 1. 初始化上半部分：模糊搜索区
+        self.init_search_area(main_layout)
+        
+        # 2. 初始化下半部分：购物车结算区
+        self.init_cart_area(main_layout)
+
+        self.setLayout(main_layout)
+
+    def init_search_area(self, parent_layout):
+        """初始化搜索结果区域 (新功能)"""
+        group_box = QGroupBox("🔍 商品检索与快速添加")
         layout = QVBoxLayout()
 
-        # --- 1. 顶部输入区 ---
-        input_layout = QHBoxLayout()
+        # --- 顶部搜索栏 ---
+        search_bar = QHBoxLayout()
+        self.search_input = QLineEdit()
+        self.search_input.setPlaceholderText("输入商品名称关键字 (如: 可乐)...")
+        self.search_input.returnPressed.connect(self.perform_search) # 回车搜索
         
+        btn_search = QPushButton("搜索")
+        btn_search.clicked.connect(self.perform_search)
+
+        search_bar.addWidget(self.search_input)
+        search_bar.addWidget(btn_search)
+        layout.addLayout(search_bar)
+
+        # --- 搜索结果表格 ---
+        self.search_table = QTableWidget()
+        self.search_table.setColumnCount(5)
+        self.search_table.setHorizontalHeaderLabels(["编号", "名称", "库存", "数量", "操作"])
+        self.search_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.search_table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents) # 数量列窄一点
+        self.search_table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents) # 操作列窄一点
+        layout.addWidget(self.search_table)
+
+        group_box.setLayout(layout)
+        # 将搜索区添加到主布局，设置伸缩因子为 2 (稍微占大一点空间，或者与下面 1:1)
+        parent_layout.addWidget(group_box, stretch=4)
+
+    def init_cart_area(self, parent_layout):
+        """初始化购物车区域 (原有功能重构)"""
+        group_box = QGroupBox("🛒 当前购物清单")
+        layout = QVBoxLayout()
+
+        # --- 顶部快速扫码栏 (保留原有功能) ---
+        scan_layout = QHBoxLayout()
         self.id_input = QLineEdit()
-        self.id_input.setPlaceholderText("在此输入条码并回车 (模拟扫码)")
-        self.id_input.setStyleSheet("font-size: 16px; padding: 5px;")
-        self.id_input.returnPressed.connect(self.add_product_to_cart) # 回车触发
+        self.id_input.setPlaceholderText("在此扫码 (输入ID回车)")
+        self.id_input.returnPressed.connect(self.handle_manual_scan)
         
-        self.qty_input = QSpinBox()
-        self.qty_input.setRange(1, 100)
-        self.qty_input.setValue(1)
-        self.qty_input.setPrefix("数量: ")
-        
-        btn_add = QPushButton("加入清单")
-        btn_add.clicked.connect(self.add_product_to_cart)
+        scan_layout.addWidget(QLabel("扫码枪输入:"))
+        scan_layout.addWidget(self.id_input)
+        layout.addLayout(scan_layout)
 
-        input_layout.addWidget(self.id_input, stretch=3)
-        input_layout.addWidget(self.qty_input, stretch=1)
-        input_layout.addWidget(btn_add, stretch=1)
-        
-        layout.addLayout(input_layout)
+        # --- 购物车表格 ---
+        self.cart_table = QTableWidget()
+        self.cart_table.setColumnCount(5)
+        self.cart_table.setHorizontalHeaderLabels(["编号", "名称", "单价", "数量", "小计"])
+        self.cart_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.cart_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        layout.addWidget(self.cart_table)
 
-        # --- 2. 中间购物车表格 ---
-        self.table = QTableWidget()
-        self.table.setColumnCount(5)
-        self.table.setHorizontalHeaderLabels(["编号", "名称", "单价", "数量", "小计"])
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers) # 不可编辑
-        layout.addWidget(self.table)
-
-        # --- 3. 底部结算区 ---
+        # --- 底部结算栏 ---
         bottom_layout = QHBoxLayout()
-        
         self.total_label = QLabel("总金额: 0.00 元")
-        self.total_label.setStyleSheet("font-size: 24px; color: red; font-weight: bold;")
+        self.total_label.setStyleSheet("font-size: 20px; color: red; font-weight: bold;")
         
-        self.btn_clear = QPushButton("清空")
-        self.btn_clear.clicked.connect(self.clear_cart)
+        btn_clear = QPushButton("清空清单")
+        btn_clear.clicked.connect(self.clear_cart)
         
-        self.btn_checkout = QPushButton("确认结算")
-        self.btn_checkout.setStyleSheet("background-color: #0078d7; color: white; font-size: 18px; padding: 10px;")
-        self.btn_checkout.clicked.connect(self.handle_checkout)
+        btn_checkout = QPushButton("确认结算")
+        btn_checkout.setStyleSheet("background-color: #0078d7; color: white; font-weight: bold; padding: 5px 15px;")
+        btn_checkout.clicked.connect(self.handle_checkout)
 
-        bottom_layout.addWidget(self.btn_clear)
+        bottom_layout.addWidget(btn_clear)
         bottom_layout.addStretch()
         bottom_layout.addWidget(self.total_label)
-        bottom_layout.addWidget(self.btn_checkout)
+        bottom_layout.addWidget(btn_checkout)
         
         layout.addLayout(bottom_layout)
-        self.setLayout(layout)
+        group_box.setLayout(layout)
+        parent_layout.addWidget(group_box, stretch=6) # 购物车区占稍微大一点
 
-    def add_product_to_cart(self):
+    # --- 逻辑功能区 ---
+
+    def perform_search(self):
+        """执行模糊搜索"""
+        keyword = self.search_input.text().strip()
+        if not keyword:
+            return
+
+        products = ProductService.search_products_by_name(keyword)
+        self.search_table.setRowCount(0) # 清空旧结果
+
+        for row_idx, p in enumerate(products):
+            self.search_table.insertRow(row_idx)
+            
+            # 文本信息
+            self.search_table.setItem(row_idx, 0, QTableWidgetItem(str(p.id)))
+            self.search_table.setItem(row_idx, 1, QTableWidgetItem(str(p.name)))
+            self.search_table.setItem(row_idx, 2, QTableWidgetItem(str(p.stock)))
+
+            # 控件1：数量调节器 (SpinBox)
+            spin = QSpinBox()
+            spin.setRange(1, 100) # 假设一次最多买100个
+            spin.setValue(1)
+            # 居中显示
+            spin.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.search_table.setCellWidget(row_idx, 3, spin)
+
+            # 控件2：添加按钮
+            btn = QPushButton("➕ 添加")
+            btn.setStyleSheet("color: green;")
+            # 使用 lambda 闭包捕获当前的 product 对象和 spinbox 控件
+            # 注意：在循环中使用 lambda 需要默认参数 p=p, s=spin 否则会全部指向最后一个
+            btn.clicked.connect(lambda checked, p=p, s=spin: self.add_from_search_result(p, s))
+            self.search_table.setCellWidget(row_idx, 4, btn)
+
+    def add_from_search_result(self, product, spin_box_widget):
+        """从搜索表格点击添加按钮触发"""
+        qty = spin_box_widget.value()
+        self.add_to_cart_logic(product, qty)
+        
+        # 视觉反馈：简单的闪烁或提示 (可选)
+        # 也可以在这里重置 spinbox 为 1
+        spin_box_widget.setValue(1)
+
+    def handle_manual_scan(self):
+        """处理扫码枪输入"""
         pid = self.id_input.text().strip()
         if not pid: return
 
-        # 查询商品
         product = ProductService.get_product_by_id(pid)
-        if not product:
-            QMessageBox.warning(self, "提示", "未找到该商品！")
-            self.id_input.selectAll()
+        if product:
+            self.add_to_cart_logic(product, 1) # 扫码默认数量为 1
+            self.id_input.clear() # 清空扫码框方便下次输入
+        else:
+            QMessageBox.warning(self, "提示", "未找到该商品编号！")
+
+    def add_to_cart_logic(self, product, qty):
+        """核心逻辑：将商品加入购物车列表"""
+        # 1. 检查库存预警 (前端简单检查，后端结算时会再次严查)
+        if product.stock < qty:
+            QMessageBox.warning(self, "库存不足", f"商品 {product.name} 库存仅剩 {product.stock}")
             return
 
-        qty = self.qty_input.value()
-
-        # 检查是否已经在购物车里 -> 如果在，增加数量
+        # 2. 检查是否已在购物车
         found = False
         for item in self.cart:
-            if item['id'] == pid:
+            if item['id'] == product.id:
                 item['qty'] += qty
                 found = True
                 break
         
         if not found:
             self.cart.append({
-                'id': pid,
+                'id': product.id,
                 'name': product.name,
                 'price': product.sell_price,
                 'qty': qty
             })
+        
+        self.update_cart_table()
 
-        self.update_table()
-        self.id_input.clear() # 清空输入框方便下一次扫码
-        self.qty_input.setValue(1) # 重置数量
-        self.id_input.setFocus() # 焦点回到输入框
-
-    def update_table(self):
-        """刷新购物车表格和总金额"""
-        self.table.setRowCount(0)
+    def update_cart_table(self):
+        """刷新下方购物车表格"""
+        self.cart_table.setRowCount(0)
         total_money = 0.0
         
         for idx, item in enumerate(self.cart):
             subtotal = item['price'] * item['qty']
             total_money += subtotal
             
-            self.table.insertRow(idx)
-            self.table.setItem(idx, 0, QTableWidgetItem(str(item['id'])))
-            self.table.setItem(idx, 1, QTableWidgetItem(str(item['name'])))
-            self.table.setItem(idx, 2, QTableWidgetItem(f"{item['price']:.2f}"))
-            self.table.setItem(idx, 3, QTableWidgetItem(str(item['qty'])))
-            self.table.setItem(idx, 4, QTableWidgetItem(f"{subtotal:.2f}"))
+            self.cart_table.insertRow(idx)
+            self.cart_table.setItem(idx, 0, QTableWidgetItem(str(item['id'])))
+            self.cart_table.setItem(idx, 1, QTableWidgetItem(str(item['name'])))
+            self.cart_table.setItem(idx, 2, QTableWidgetItem(f"{item['price']:.2f}"))
+            self.cart_table.setItem(idx, 3, QTableWidgetItem(str(item['qty'])))
+            self.cart_table.setItem(idx, 4, QTableWidgetItem(f"{subtotal:.2f}"))
         
         self.total_label.setText(f"总金额: {total_money:.2f} 元")
 
     def clear_cart(self):
         self.cart = []
-        self.update_table()
+        self.update_cart_table()
 
     def handle_checkout(self):
         if not self.cart:
@@ -131,10 +211,13 @@ class CashierPage(QWidget):
                                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
         
         if confirm == QMessageBox.StandardButton.Yes:
-            # 调用 Service
             success, msg = SaleService.checkout(self.cart)
             if success:
                 QMessageBox.information(self, "成功", "交易完成！")
                 self.clear_cart()
+                # 交易完成后，如果有搜索结果，建议刷新一下搜索结果（因为库存变了）
+                # 但为了简便，这里可以清空搜索结果
+                self.search_table.setRowCount(0)
+                self.search_input.clear()
             else:
                 QMessageBox.critical(self, "失败", f"结算失败: {msg}")

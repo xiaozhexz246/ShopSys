@@ -61,3 +61,17 @@ class ProductService:
             return session.query(Product).filter(Product.id == product_id).first()
         finally:
             session.close()
+    @staticmethod
+    def search_products_by_name(keyword):
+        """
+        根据商品名称模糊搜索
+        :param keyword: 搜索关键字
+        :return: Product 对象列表
+        """
+        session = SessionLocal()
+        try:
+            # 使用 ILIKE (如果不区分大小写) 或者 LIKE
+            # SQLite 默认 LIKE 不区分大小写 (对 ASCII 字符)
+            return session.query(Product).filter(Product.name.like(f"%{keyword}%")).all()
+        finally:
+            session.close()
