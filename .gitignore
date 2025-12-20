@@ -5,8 +5,10 @@
 /todo-v1.md
 /venv
 /.venv
-/__pycache__
-services/__pycache__/
-ui/__pycache__/
+
 /shop.db
-/
+# Python 缓存文件
+__pycache__/
+*.pyc
+*.pyo
+*.pyd

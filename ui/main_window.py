@@ -1,16 +1,17 @@
 # 文件名: ui/main_window.py
-from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QToolBar, 
+from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QToolBar,
                              QStackedWidget, QLabel, QMessageBox)
 from PyQt6.QtGui import QAction
 from ui.inventory_page import InventoryPage
 from ui.cashier_page import CashierPage
 from ui.stats_page import StatsPage
 from ui.hidden_page import HiddenPage
+from services.backup_service import BackupService
 class MainWindow(QMainWindow):
     def __init__(self,is_hidden_mode=False):
         super().__init__()
         self.is_hidden_mode = is_hidden_mode
-        self.setWindowTitle("超市售货系统 v1.1")
+        self.setWindowTitle("超市售货系统 v1.3")
         self.resize(1000, 600) # 默认大小
 
         # 1. 创建核心容器 (堆叠窗口，用来切换页面)
@@ -70,3 +71,18 @@ class MainWindow(QMainWindow):
         action_exit = QAction("❌ 退出系统", self)
         action_exit.triggered.connect(self.close)
         toolbar.addAction(action_exit)
+
+    def closeEvent(self, event):
+        """窗口关闭事件：执行自动备份"""
+        try:
+            # v1.3新增：退出时自动备份数据库
+            success, message = BackupService.backup_db()
+            if success:
+                print(f"✅ {message}")
+            else:
+                print(f"⚠️ 备份失败: {message}")
+        except Exception as e:
+            print(f"⚠️ 备份过程出错: {e}")
+        finally:
+            # 无论备份是否成功，都允许关闭窗口
+            event.accept()

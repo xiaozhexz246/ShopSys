@@ -33,13 +33,14 @@ class SaleRecord(Base):
     __tablename__ = "sale_records"
 
     id = Column(Integer, primary_key=True, index=True)
-    
+
     # 外键：关联到 Product 表的 id
     product_id = Column(String, ForeignKey("products.id"))
-    
+
     quantity = Column(Integer, nullable=False) # 卖出数量
     total_amount = Column(Float, nullable=False) # 本单总金额 (单价 * 数量)
-    sale_time = Column(DateTime, default=datetime.now) # 自动记录当前时间
+    profit = Column(Float, default=0.0) # 固化记录单笔交易的净利润 (v1.3新增)
+    sale_time = Column(DateTime, default=datetime.now, index=True) # 自动记录当前时间，添加索引优化查询
 
     # 建立与 Product 的关联，方便查询时直接获取商品详情
     product = relationship("Product")

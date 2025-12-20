@@ -30,16 +30,21 @@ class SaleService:
                 # 2. 扣减库存
                 product.stock -= qty
 
-                # 3. 创建销售记录 (使用实付金额)
+                # 3. 计算本次交易的利润 (v1.3: 固化利润快照)
+                # 利润 = (实付单价 - 进价) * 数量
+                record_profit = (actual_price - product.cost_price) * qty
+
+                # 4. 创建销售记录 (使用实付金额，并保存利润)
                 record = SaleRecord(
                     product_id=pid,
                     quantity=qty,
                     total_amount=qty * actual_price,  # 使用实付金额
+                    profit=record_profit,  # v1.3新增：保存利润快照
                     sale_time=datetime.now()
                 )
                 session.add(record)
 
-            # 4. 提交事务 (原子操作：要么全成功，要么全失败)
+            # 5. 提交事务 (原子操作：要么全成功，要么全失败)
             session.commit()
             return True, "结算成功！"
 
