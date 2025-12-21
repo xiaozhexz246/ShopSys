@@ -1,6 +1,7 @@
 # 文件名: ui/stats_page.py
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-                             QPushButton, QDateEdit, QFrame, QTabWidget, QGroupBox)
+                             QPushButton, QDateEdit, QFrame, QTabWidget, QGroupBox,
+                             QTableWidget, QTableWidgetItem, QHeaderView, QMessageBox)
 from PyQt6.QtCore import QDate, QThread, pyqtSignal
 from PyQt6.QtGui import QFont
 from services.stats_service import StatsService
@@ -33,13 +34,15 @@ class DataWorker(QThread):
             category_data = StatsService.get_category_stats(self.start_date, self.end_date)
             top_products_data = StatsService.get_top_products(self.start_date, self.end_date, limit=10)
             total_stats = StatsService.get_total_stats(self.start_date, self.end_date)
+            raw_sales_data = StatsService.get_raw_sales_records(self.start_date, self.end_date)
 
             # 发送结果
             self.finished.emit({
                 'trend': trend_data,
                 'category': category_data,
                 'top_products': top_products_data,
-                'total_stats': total_stats
+                'total_stats': total_stats,
+                'raw_sales': raw_sales_data
             })
         except Exception as e:
             print(f"数据加载出错: {e}")
@@ -49,6 +52,7 @@ class StatsPage(QWidget):
     def __init__(self):
         super().__init__()
         self.worker = None
+        self.current_raw_data = None  # 保存当前的原始销售数据用于导出
         self.init_ui()
 
     def init_ui(self):
@@ -71,6 +75,10 @@ class StatsPage(QWidget):
         # 使用 QTabWidget 容纳多张图表
         self.tab_widget = QTabWidget()
 
+        # Tab 0: 销售明细 (v1.4新增)
+        self.details_tab = self.create_details_tab()
+        self.tab_widget.insertTab(0, self.details_tab, "📜 销售明细")
+
         # Tab 1: 营收与利润趋势
         self.trend_canvas = FigureCanvas(Figure(figsize=(8, 5), dpi=100))
         self.tab_widget.addTab(self.trend_canvas, "📈 营收与利润趋势")
@@ -84,6 +92,44 @@ class StatsPage(QWidget):
         self.tab_widget.addTab(self.top_canvas, "🏆 热销商品排行")
 
         return self.tab_widget
+
+    def create_details_tab(self):
+        """创建销售明细 Tab (v1.4)"""
+        widget = QWidget()
+        layout = QVBoxLayout()
+
+        # 顶部：导出按钮
+        btn_export = QPushButton("📤 导出当前记录为 Excel")
+        btn_export.clicked.connect(self.export_to_excel)
+        btn_export.setStyleSheet("""
+            QPushButton {
+                background-color: #28a745;
+                color: white;
+                padding: 8px;
+                border-radius: 5px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #218838;
+            }
+        """)
+        layout.addWidget(btn_export)
+
+        # 主体：销售明细表格
+        self.details_table = QTableWidget()
+        self.details_table.setColumnCount(8)
+        self.details_table.setHorizontalHeaderLabels([
+            '流水号', '商品名称', '类别', '总金额', '数量', '利润', '时间', '商品编号'
+        ])
+
+        # 设置表格属性
+        self.details_table.horizontalHeader().setStretchLastSection(True)
+        self.details_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self.details_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+
+        layout.addWidget(self.details_table)
+        widget.setLayout(layout)
+        return widget
 
     def create_control_panel(self):
         """创建右侧控制面板区"""
@@ -212,6 +258,9 @@ class StatsPage(QWidget):
         self.plot_category_chart(data.get('category'))
         self.plot_top_products_chart(data.get('top_products'))
 
+        # 更新销售明细表格 (v1.4)
+        self.update_details_table(data.get('raw_sales'))
+
     def plot_trend_chart(self, df):
         """绘制营收与利润趋势图"""
         figure = self.trend_canvas.figure
@@ -305,3 +354,51 @@ class StatsPage(QWidget):
                     transform=ax.transAxes, fontsize=12, color='gray')
 
         self.top_canvas.draw()
+
+    def update_details_table(self, df):
+        """更新销售明细表格 (v1.4)"""
+        # 保存数据用于导出
+        self.current_raw_data = df
+
+        # 清空表格
+        self.details_table.setRowCount(0)
+
+        if df is None or df.empty:
+            return
+
+        # 填充表格
+        self.details_table.setRowCount(len(df))
+
+        for row_idx, row_data in df.iterrows():
+            # 按照列顺序填充：流水号, 商品名称, 类别, 总金额, 数量, 利润, 时间, 商品编号
+            col_mapping = ['流水号', '商品名称', '类别', '总金额', '数量', '利润', '时间', '商品编号']
+
+            for col_idx, col_name in enumerate(col_mapping):
+                value = row_data.get(col_name, '')
+
+                # 格式化显示
+                if col_name in ['总金额', '利润']:
+                    item = QTableWidgetItem(f"¥{value:.2f}")
+                elif col_name == '时间':
+                    item = QTableWidgetItem(str(value))
+                else:
+                    item = QTableWidgetItem(str(value))
+
+                self.details_table.setItem(row_idx, col_idx, item)
+
+        # 自动调整列宽
+        self.details_table.resizeColumnsToContents()
+
+    def export_to_excel(self):
+        """导出当前销售明细为 Excel (v1.4)"""
+        if self.current_raw_data is None or self.current_raw_data.empty:
+            QMessageBox.warning(self, "提示", "当前无数据可导出，请先查询数据！")
+            return
+
+        # 调用 StatsService 导出
+        success, result = StatsService.export_to_excel(self.current_raw_data)
+
+        if success:
+            QMessageBox.information(self, "导出成功", f"销售记录已导出至:\n{result}")
+        else:
+            QMessageBox.critical(self, "导出失败", result)

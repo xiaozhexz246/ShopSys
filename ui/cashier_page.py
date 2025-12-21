@@ -44,11 +44,10 @@ class CashierPage(QWidget):
 
         # --- 搜索结果表格 ---
         self.search_table = QTableWidget()
-        self.search_table.setColumnCount(5)
-        self.search_table.setHorizontalHeaderLabels(["编号", "名称", "库存", "数量", "操作"])
+        self.search_table.setColumnCount(4)  # v1.4: 移除数量列
+        self.search_table.setHorizontalHeaderLabels(["编号", "名称", "库存", "操作"])
         self.search_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        self.search_table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents) # 数量列窄一点
-        self.search_table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents) # 操作列窄一点
+        self.search_table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents) # 操作列窄一点
         layout.addWidget(self.search_table)
 
         group_box.setLayout(layout)
@@ -75,7 +74,10 @@ class CashierPage(QWidget):
         self.cart_table.setColumnCount(6)  # 增加实付金额列
         self.cart_table.setHorizontalHeaderLabels(["编号", "名称", "单价", "实付金额", "数量", "小计"])
         self.cart_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        self.cart_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        # v1.4: 移除 NoEditTriggers，允许编辑数量列
+        self.cart_table.setEditTriggers(QAbstractItemView.EditTrigger.DoubleClicked | QAbstractItemView.EditTrigger.EditKeyPressed)
+        # 连接 itemChanged 信号以监听数量列的修改
+        self.cart_table.itemChanged.connect(self.on_cart_item_changed)
         layout.addWidget(self.cart_table)
 
         # --- 底部结算栏 ---
@@ -112,36 +114,21 @@ class CashierPage(QWidget):
 
         for row_idx, p in enumerate(products):
             self.search_table.insertRow(row_idx)
-            
+
             # 文本信息
             self.search_table.setItem(row_idx, 0, QTableWidgetItem(str(p.id)))
             self.search_table.setItem(row_idx, 1, QTableWidgetItem(str(p.name)))
             self.search_table.setItem(row_idx, 2, QTableWidgetItem(str(p.stock)))
 
-            # 控件1：数量调节器 (SpinBox)
-            spin = QSpinBox()
-            spin.setRange(1, 100) # 假设一次最多买100个
-            spin.setValue(1)
-            # 居中显示
-            spin.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.search_table.setCellWidget(row_idx, 3, spin)
-
-            # 控件2：添加按钮
+            # v1.4: 只添加按钮，默认数量为1
             btn = QPushButton("➕ 添加")
             btn.setStyleSheet("color: green;")
-            # 使用 lambda 闭包捕获当前的 product 对象和 spinbox 控件
-            # 注意：在循环中使用 lambda 需要默认参数 p=p, s=spin 否则会全部指向最后一个
-            btn.clicked.connect(lambda checked, p=p, s=spin: self.add_from_search_result(p, s))
-            self.search_table.setCellWidget(row_idx, 4, btn)
+            btn.clicked.connect(lambda checked, p=p: self.add_from_search_result(p))
+            self.search_table.setCellWidget(row_idx, 3, btn)
 
-    def add_from_search_result(self, product, spin_box_widget):
-        """从搜索表格点击添加按钮触发"""
-        qty = spin_box_widget.value()
-        self.add_to_cart_logic(product, qty)
-        
-        # 视觉反馈：简单的闪烁或提示 (可选)
-        # 也可以在这里重置 spinbox 为 1
-        spin_box_widget.setValue(1)
+    def add_from_search_result(self, product):
+        """从搜索表格点击添加按钮触发 (v1.4: 默认数量为1)"""
+        self.add_to_cart_logic(product, 1)
 
     def handle_manual_scan(self):
         """处理扫码枪输入"""
@@ -184,6 +171,8 @@ class CashierPage(QWidget):
 
     def update_cart_table(self):
         """刷新下方购物车表格"""
+        # v1.4: 使用 blockSignals 防止触发 itemChanged 信号导致死循环
+        self.cart_table.blockSignals(True)
         self.cart_table.setRowCount(0)
         total_money = 0.0
 
@@ -192,11 +181,21 @@ class CashierPage(QWidget):
             total_money += subtotal
 
             self.cart_table.insertRow(idx)
-            self.cart_table.setItem(idx, 0, QTableWidgetItem(str(item['id'])))
-            self.cart_table.setItem(idx, 1, QTableWidgetItem(str(item['name'])))
-            self.cart_table.setItem(idx, 2, QTableWidgetItem(f"{item['price']:.2f}"))
 
-            # 实付金额使用可编辑的SpinBox
+            # 设置不可编辑的列
+            id_item = QTableWidgetItem(str(item['id']))
+            id_item.setFlags(id_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+            self.cart_table.setItem(idx, 0, id_item)
+
+            name_item = QTableWidgetItem(str(item['name']))
+            name_item.setFlags(name_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+            self.cart_table.setItem(idx, 1, name_item)
+
+            price_item = QTableWidgetItem(f"{item['price']:.2f}")
+            price_item.setFlags(price_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+            self.cart_table.setItem(idx, 2, price_item)
+
+            # 实付金额使用可编辑的SpinBox（保留原有功能）
             actual_price_spin = QDoubleSpinBox()
             actual_price_spin.setRange(item['cost_price'], item['price'])  # 范围：进价到售价
             actual_price_spin.setDecimals(2)
@@ -206,10 +205,18 @@ class CashierPage(QWidget):
             actual_price_spin.valueChanged.connect(lambda value, i=idx: self.update_actual_price_only(i, value))
             self.cart_table.setCellWidget(idx, 3, actual_price_spin)
 
-            self.cart_table.setItem(idx, 4, QTableWidgetItem(str(item['qty'])))
-            self.cart_table.setItem(idx, 5, QTableWidgetItem(f"{subtotal:.2f}"))
+            # v1.4: 数量列设置为可编辑
+            qty_item = QTableWidgetItem(str(item['qty']))
+            qty_item.setFlags(qty_item.flags() | Qt.ItemFlag.ItemIsEditable)
+            self.cart_table.setItem(idx, 4, qty_item)
+
+            # 小计列不可编辑
+            subtotal_item = QTableWidgetItem(f"{subtotal:.2f}")
+            subtotal_item.setFlags(subtotal_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+            self.cart_table.setItem(idx, 5, subtotal_item)
 
         self.total_label.setText(f"总金额: {total_money:.2f} 元")
+        self.cart_table.blockSignals(False)
 
     def update_actual_price_only(self, cart_index, new_price):
         """仅更新实付金额，不刷新整个表格（避免无限循环）"""
@@ -217,10 +224,58 @@ class CashierPage(QWidget):
             self.cart[cart_index]['actual_price'] = new_price
             # 只更新小计和总金额
             subtotal = new_price * self.cart[cart_index]['qty']
-            self.cart_table.setItem(cart_index, 5, QTableWidgetItem(f"{subtotal:.2f}"))
+            subtotal_item = QTableWidgetItem(f"{subtotal:.2f}")
+            subtotal_item.setFlags(subtotal_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+            self.cart_table.blockSignals(True)
+            self.cart_table.setItem(cart_index, 5, subtotal_item)
+            self.cart_table.blockSignals(False)
             # 重新计算总金额
             total_money = sum(item['actual_price'] * item['qty'] for item in self.cart)
             self.total_label.setText(f"总金额: {total_money:.2f} 元")
+
+    def on_cart_item_changed(self, item):
+        """监听购物车表格单元格变化 (v1.4)"""
+        # 只处理数量列（第4列）的修改
+        if item.column() != 4:
+            return
+
+        row = item.row()
+        if row >= len(self.cart):
+            return
+
+        try:
+            # 获取用户输入的新数量
+            new_qty_text = item.text().strip()
+            new_qty = int(new_qty_text)
+
+            # 校验：必须是正整数
+            if new_qty <= 0:
+                raise ValueError("数量必须大于0")
+
+            # 更新购物车数据
+            self.cart[row]['qty'] = new_qty
+
+            # 重新计算小计
+            subtotal = self.cart[row]['actual_price'] * new_qty
+            subtotal_item = QTableWidgetItem(f"{subtotal:.2f}")
+            subtotal_item.setFlags(subtotal_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+
+            # 使用 blockSignals 防止触发 itemChanged
+            self.cart_table.blockSignals(True)
+            self.cart_table.setItem(row, 5, subtotal_item)
+            self.cart_table.blockSignals(False)
+
+            # 重新计算总金额
+            total_money = sum(item['actual_price'] * item['qty'] for item in self.cart)
+            self.total_label.setText(f"总金额: {total_money:.2f} 元")
+
+        except ValueError as e:
+            # 输入无效，恢复原值
+            QMessageBox.warning(self, "输入错误", f"请输入有效的正整数！\n{str(e)}")
+            # 恢复原来的数量
+            self.cart_table.blockSignals(True)
+            item.setText(str(self.cart[row]['qty']))
+            self.cart_table.blockSignals(False)
 
     def clear_cart(self):
         self.cart = []

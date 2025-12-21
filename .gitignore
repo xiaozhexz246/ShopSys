@@ -5,7 +5,7 @@
 /todo-v1.md
 /venv
 /.venv
-
+/backups
 /shop.db
 # Python 缓存文件
 __pycache__/

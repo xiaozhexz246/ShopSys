@@ -1,5 +1,7 @@
 # 文件名: services/stats_service.py
 import pandas as pd
+import os
+from datetime import datetime
 from sqlalchemy import func
 from database import SessionLocal
 from models import SaleRecord, Product
@@ -137,3 +139,66 @@ class StatsService:
         :return: DataFrame (包含日期和销售额)
         """
         return StatsService.get_sales_and_profit_trend(start_date, end_date)[['date', 'revenue']].rename(columns={'revenue': 'total'})
+
+    @staticmethod
+    def get_raw_sales_records(start_date, end_date):
+        """
+        获取指定日期范围内的原始销售记录（用于明细查询和导出）
+        :return: DataFrame (包含销售记录所有字段)
+        """
+        session = SessionLocal()
+        try:
+            # 联表查询 SaleRecord 和 Product，获取完整信息
+            query = session.query(
+                SaleRecord.id.label('流水号'),
+                Product.name.label('商品名称'),
+                Product.category.label('类别'),
+                SaleRecord.total_amount.label('总金额'),
+                SaleRecord.quantity.label('数量'),
+                SaleRecord.profit.label('利润'),
+                SaleRecord.sale_time.label('时间'),
+                Product.id.label('商品编号')
+            ).join(
+                Product, SaleRecord.product_id == Product.id
+            ).filter(
+                SaleRecord.sale_time >= start_date,
+                SaleRecord.sale_time <= end_date
+            ).order_by(
+                SaleRecord.sale_time.desc()
+            )
+
+            df = pd.read_sql(query.statement, session.bind)
+            return df
+
+        except Exception as e:
+            print(f"获取销售明细出错: {e}")
+            return pd.DataFrame()
+        finally:
+            session.close()
+
+    @staticmethod
+    def export_to_excel(dataframe):
+        """
+        将 DataFrame 导出为 Excel 文件
+        :param dataframe: 要导出的数据
+        :return: (成功标志, 保存路径或错误信息)
+        """
+        try:
+            # 检查并创建 backups/sells/ 文件夹
+            export_dir = "backups/sells"
+            if not os.path.exists(export_dir):
+                os.makedirs(export_dir)
+
+            # 生成时间戳文件名
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"sales_record_{timestamp}.xlsx"
+            filepath = os.path.join(export_dir, filename)
+
+            # 导出到 Excel
+            dataframe.to_excel(filepath, index=False, engine='openpyxl')
+
+            return True, filepath
+
+        except Exception as e:
+            print(f"导出 Excel 出错: {e}")
+            return False, f"导出失败: {str(e)}"

@@ -1,6 +1,7 @@
 # 文件名: ui/inventory_page.py
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
                              QTableWidget, QTableWidgetItem, QHeaderView, QMessageBox, QAbstractItemView, QLineEdit)
+from PyQt6.QtCore import Qt
 from services.product_service import ProductService
 from ui.product_dialog import ProductDialog  # 导入刚才写的弹窗
 
@@ -51,11 +52,14 @@ class InventoryPage(QWidget):
         self.table.setColumnCount(7)  # 增加类别和位置列
         self.update_table_headers()
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        
+
         # 设置表格行为：整行选中、不可编辑
         self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-        
+
+        # v1.4: 启用表格排序
+        self.table.setSortingEnabled(True)
+
         layout.addWidget(self.table)
         self.setLayout(layout)
 
@@ -74,13 +78,19 @@ class InventoryPage(QWidget):
 
     def load_data(self, products=None):
         """加载商品数据到表格"""
-        if products is None:
+        # 处理按钮信号传入的布尔值参数
+        if products is None or isinstance(products, bool):
             products = ProductService.get_all_products()
 
+        # v1.4: 在加载数据时禁用排序，加载完成后再启用，提升性能
+        self.table.setSortingEnabled(False)
         self.table.setRowCount(0)
+
         for row_idx, p in enumerate(products):
             self.table.insertRow(row_idx)
             col = 0
+
+            # 文本列
             self.table.setItem(row_idx, col, QTableWidgetItem(str(p.id)))
             col += 1
             self.table.setItem(row_idx, col, QTableWidgetItem(str(p.name)))
@@ -91,13 +101,25 @@ class InventoryPage(QWidget):
             col += 1
 
             if self.show_cost_price:
-                # 显示进价
-                self.table.setItem(row_idx, col, QTableWidgetItem(f"{p.cost_price:.2f}"))
+                # v1.4: 进价列使用 DisplayRole 存储数值
+                cost_item = QTableWidgetItem()
+                cost_item.setData(Qt.ItemDataRole.DisplayRole, p.cost_price)
+                self.table.setItem(row_idx, col, cost_item)
                 col += 1
 
-            self.table.setItem(row_idx, col, QTableWidgetItem(f"{p.sell_price:.2f}"))
+            # v1.4: 售价列使用 DisplayRole 存储数值
+            price_item = QTableWidgetItem()
+            price_item.setData(Qt.ItemDataRole.DisplayRole, p.sell_price)
+            self.table.setItem(row_idx, col, price_item)
             col += 1
-            self.table.setItem(row_idx, col, QTableWidgetItem(str(p.stock)))
+
+            # v1.4: 库存列使用 DisplayRole 存储数值
+            stock_item = QTableWidgetItem()
+            stock_item.setData(Qt.ItemDataRole.DisplayRole, p.stock)
+            self.table.setItem(row_idx, col, stock_item)
+
+        # v1.4: 加载完成后重新启用排序
+        self.table.setSortingEnabled(True)
 
     def open_add_dialog(self):
         """打开新增商品弹窗"""
