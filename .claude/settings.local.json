@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(python migrate_v1.5.py:*)",
+      "Bash(dir)",
+      "Bash(.venv/Scripts/python.exe migrate_v1.5.py)",
+      "Bash(.venv/Scripts/python.exe:*)"
     ]
   }
 }

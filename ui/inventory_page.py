@@ -49,9 +49,10 @@ class InventoryPage(QWidget):
 
         # --- 中间表格区 ---
         self.table = QTableWidget()
-        self.table.setColumnCount(7)  # 增加类别和位置列
+        self.table.setColumnCount(8)  # 增加操作列
         self.update_table_headers()
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.table.horizontalHeader().setSectionResizeMode(7, QHeaderView.ResizeMode.ResizeToContents)  # 操作列固定宽度
 
         # 设置表格行为：整行选中、不可编辑
         self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
@@ -71,10 +72,10 @@ class InventoryPage(QWidget):
     def update_table_headers(self):
         """更新表格列头"""
         if self.show_cost_price:
-            self.table.setHorizontalHeaderLabels(["编号", "名称", "类别", "位置", "进价", "售价", "库存"])
+            self.table.setHorizontalHeaderLabels(["编号", "名称", "类别", "位置", "进价", "售价", "库存", "操作"])
         else:
-            self.table.setHorizontalHeaderLabels(["编号", "名称", "类别", "位置", "售价", "库存", ""])
-            self.table.setColumnHidden(6, True)  # 隐藏最后一列
+            self.table.setHorizontalHeaderLabels(["编号", "名称", "类别", "位置", "售价", "库存", "", "操作"])
+            self.table.setColumnHidden(6, True)  # 隐藏进价列
 
     def load_data(self, products=None):
         """加载商品数据到表格"""
@@ -117,6 +118,13 @@ class InventoryPage(QWidget):
             stock_item = QTableWidgetItem()
             stock_item.setData(Qt.ItemDataRole.DisplayRole, p.stock)
             self.table.setItem(row_idx, col, stock_item)
+            col += 1
+
+            # 添加编辑按钮
+            btn_edit = QPushButton("编辑")
+            btn_edit.setStyleSheet("background-color: #007bff; color: white;")
+            btn_edit.clicked.connect(lambda checked, product=p: self.open_edit_dialog(product))
+            self.table.setCellWidget(row_idx, col, btn_edit)
 
         # v1.4: 加载完成后重新启用排序
         self.table.setSortingEnabled(True)
@@ -133,6 +141,26 @@ class InventoryPage(QWidget):
                 self.load_data() # 刷新表格
             else:
                 QMessageBox.critical(self, "错误", f"添加失败: {msg}")
+
+    def open_edit_dialog(self, product):
+        """打开编辑商品弹窗"""
+        dialog = ProductDialog(self, product=product)
+        if dialog.exec():
+            data = dialog.get_data()
+            # 调用 Service 更新数据库
+            success, msg = ProductService.update_product(
+                product_id=data["id"],
+                name=data["name"],
+                category=data["category"],
+                location=data["location"],
+                cost=data["cost"],
+                price=data["price"]
+            )
+            if success:
+                QMessageBox.information(self, "成功", "商品已更新")
+                self.load_data()  # 刷新表格
+            else:
+                QMessageBox.critical(self, "错误", f"更新失败: {msg}")
 
     def delete_selected(self):
         """删除选中的商品"""

@@ -3,11 +3,27 @@ from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QFormLayout, QLineEdit,
                              QDialogButtonBox, QDoubleSpinBox, QSpinBox, QMessageBox, QComboBox)
 
 class ProductDialog(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, product=None):
+        """
+        商品对话框
+        :param parent: 父窗口
+        :param product: Product对象，如果提供则为编辑模式，否则为新增模式
+        """
         super().__init__(parent)
-        self.setWindowTitle("新增商品")
+        self.product = product
+        self.is_edit_mode = product is not None
+
+        if self.is_edit_mode:
+            self.setWindowTitle("编辑商品")
+        else:
+            self.setWindowTitle("新增商品")
+
         self.setFixedSize(350, 350)  # 增加高度以适应新字段
         self.setup_ui()
+
+        # 如果是编辑模式，回显数据
+        if self.is_edit_mode:
+            self.load_product_data()
 
     def setup_ui(self):
         layout = QVBoxLayout()
@@ -70,8 +86,21 @@ class ProductDialog(QDialog):
         if not self.name_input.text().strip():
             QMessageBox.warning(self, "警告", "商品名称不能为空")
             return
-        
+
         self.accept() # 关闭弹窗并返回 Accepted 状态
+
+    def load_product_data(self):
+        """加载商品数据到输入框（编辑模式）"""
+        if self.product:
+            self.id_input.setText(str(self.product.id))
+            self.id_input.setReadOnly(True)  # 编辑模式下编号不可修改
+            self.name_input.setText(str(self.product.name))
+            self.category_input.setCurrentText(str(self.product.category))
+            self.location_input.setCurrentText(str(self.product.location))
+            self.cost_input.setValue(self.product.cost_price)
+            self.price_input.setValue(self.product.sell_price)
+            self.stock_input.setValue(self.product.stock)
+            self.stock_input.setReadOnly(True)  # 编辑模式下库存不可修改（通过进货/出售改变）
 
     def get_data(self):
         """返回用户输入的数据"""

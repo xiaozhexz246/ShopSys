@@ -1,6 +1,7 @@
 # 文件名: services/product_service.py
 from database import SessionLocal
-from models import Product
+from models import Product, PurchaseRecord
+from datetime import datetime
 
 class ProductService:
     @staticmethod
@@ -74,5 +75,82 @@ class ProductService:
             # 使用 ILIKE (如果不区分大小写) 或者 LIKE
             # SQLite 默认 LIKE 不区分大小写 (对 ASCII 字符)
             return session.query(Product).filter(Product.name.like(f"%{keyword}%")).all()
+        finally:
+            session.close()
+
+    @staticmethod
+    def replenish_stock(cart_items):
+        """
+        进货入库
+        :param cart_items: 进货清单列表，格式 [{"product_id": "xxx", "quantity": 10, "cost_price": 5.5}, ...]
+        :return: (success: bool, message: str)
+        """
+        session = SessionLocal()
+        try:
+            for item in cart_items:
+                product_id = item["product_id"]
+                quantity = item["quantity"]
+                cost_price = item["cost_price"]
+
+                # 查找商品
+                product = session.query(Product).filter(Product.id == product_id).first()
+                if not product:
+                    session.rollback()
+                    return False, f"商品编号 {product_id} 不存在"
+
+                # 更新库存
+                product.stock += quantity
+
+                # 更新进价（如果有变动）
+                product.cost_price = cost_price
+
+                # 插入进货记录
+                purchase_record = PurchaseRecord(
+                    product_id=product_id,
+                    quantity=quantity,
+                    cost_price=cost_price,
+                    purchase_time=datetime.now()
+                )
+                session.add(purchase_record)
+
+            session.commit()
+            return True, "进货成功"
+        except Exception as e:
+            session.rollback()
+            return False, f"进货失败: {str(e)}"
+        finally:
+            session.close()
+
+    @staticmethod
+    def update_product(product_id, name, category, location, cost, price):
+        """
+        更新商品信息
+        :param product_id: 商品编号
+        :param name: 商品名称
+        :param category: 类别
+        :param location: 位置
+        :param cost: 进价
+        :param price: 售价
+        :return: (success: bool, message: str)
+        """
+        session = SessionLocal()
+        try:
+            # 查找商品
+            product = session.query(Product).filter(Product.id == product_id).first()
+            if not product:
+                return False, "商品不存在"
+
+            # 更新信息
+            product.name = name
+            product.category = category
+            product.location = location
+            product.cost_price = cost
+            product.sell_price = price
+
+            session.commit()
+            return True, "更新成功"
+        except Exception as e:
+            session.rollback()
+            return False, f"更新失败: {str(e)}"
         finally:
             session.close()

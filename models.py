@@ -1,7 +1,7 @@
 # 文件名: models.py
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, DateTime, Date, ForeignKey
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, timedelta
 from database import Base
 
 # --- 管理员表 ---
@@ -43,4 +43,32 @@ class SaleRecord(Base):
     sale_time = Column(DateTime, default=datetime.now, index=True) # 自动记录当前时间，添加索引优化查询
 
     # 建立与 Product 的关联，方便查询时直接获取商品详情
+    product = relationship("Product")
+
+# --- 进货记录表 ---
+class PurchaseRecord(Base):
+    __tablename__ = "purchase_records"
+
+    id = Column(Integer, primary_key=True, index=True)
+    product_id = Column(String, ForeignKey("products.id"), nullable=False)
+    quantity = Column(Integer, nullable=False)  # 进货数量
+    cost_price = Column(Float, nullable=False)  # 当时的进价
+    purchase_time = Column(DateTime, default=datetime.now, index=True)  # 进货时间
+
+    # 关联到商品表
+    product = relationship("Product")
+
+# --- 易过期批次表 ---
+class PerishableBatch(Base):
+    __tablename__ = "perishable_batches"
+
+    id = Column(Integer, primary_key=True, index=True)
+    product_id = Column(String, ForeignKey("products.id"), nullable=False)
+    production_date = Column(Date, nullable=False)  # 生产日期
+    shelf_life = Column(Integer, nullable=False)  # 保质期天数
+    expiration_date = Column(Date, nullable=False)  # 过期日期
+    quantity = Column(Integer, nullable=False)  # 该批次数量
+    created_at = Column(DateTime, default=datetime.now, index=True)  # 记录创建时间
+
+    # 关联到商品表
     product = relationship("Product")

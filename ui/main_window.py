@@ -6,12 +6,14 @@ from ui.inventory_page import InventoryPage
 from ui.cashier_page import CashierPage
 from ui.stats_page import StatsPage
 from ui.hidden_page import HiddenPage
+from ui.replenish_page import ReplenishPage
+from ui.perishable_page import PerishablePage
 from services.backup_service import BackupService
 class MainWindow(QMainWindow):
     def __init__(self,is_hidden_mode=False):
         super().__init__()
         self.is_hidden_mode = is_hidden_mode
-        self.setWindowTitle("超市售货系统 v1.3")
+        self.setWindowTitle("超市售货系统 v1.5")
         self.resize(1000, 600) # 默认大小
 
         # 1. 创建核心容器 (堆叠窗口，用来切换页面)
@@ -25,16 +27,20 @@ class MainWindow(QMainWindow):
         # 2. 初始化各个页面
         self.page_inventory = InventoryPage()
         self.page_cashier = CashierPage()
-        self.page_stats = StatsPage()     # 后面开发
+        self.page_stats = StatsPage()
+        self.page_replenish = ReplenishPage()     # v1.5: 进货管理
+        self.page_perishable = PerishablePage()   # v1.5: 易过期管理
 
         # 3. 把页面加入堆叠容器
-        self.stack.addWidget(self.page_inventory) # 索引 0
-        self.stack.addWidget(self.page_cashier)# 索引1
-        self.stack.addWidget(self.page_stats) # Index 2 
+        self.stack.addWidget(self.page_inventory)   # 索引 0
+        self.stack.addWidget(self.page_cashier)     # 索引 1
+        self.stack.addWidget(self.page_stats)       # 索引 2
+        self.stack.addWidget(self.page_replenish)   # 索引 3
+        self.stack.addWidget(self.page_perishable)  # 索引 4
         # --- 核心修改：如果是隐藏模式，加载隐藏页面 ---
         if self.is_hidden_mode:
             self.page_hidden = HiddenPage()
-            self.stack.addWidget(self.page_hidden) # Index 3
+            self.stack.addWidget(self.page_hidden)  # 索引 5
         # 4. 创建顶部工具栏 (导航栏)
         self.create_toolbar()
 
@@ -61,13 +67,24 @@ class MainWindow(QMainWindow):
         # 点击切换到 Index 2
         action_stats.triggered.connect(lambda: self.stack.setCurrentWidget(self.page_stats))
         toolbar.addAction(action_stats)
+
+        # 动作 4: 进货管理 (v1.5新增)
+        action_replenish = QAction("🚚 进货管理", self)
+        action_replenish.triggered.connect(lambda: self.stack.setCurrentWidget(self.page_replenish))
+        toolbar.addAction(action_replenish)
+
+        # 动作 5: 易过期管理 (v1.5新增)
+        action_perishable = QAction("🥛 易过期管理", self)
+        action_perishable.triggered.connect(lambda: self.stack.setCurrentWidget(self.page_perishable))
+        toolbar.addAction(action_perishable)
+
         if self.is_hidden_mode:
             action_hidden = QAction("🔧 系统维护", self)
             action_hidden.triggered.connect(lambda: self.stack.setCurrentWidget(self.page_hidden))
             # 给个特殊的颜色或图标（这里简单用文字区分）
             toolbar.addAction(action_hidden)
 
-        # 动作 4: 退出
+        # 动作 6: 退出
         action_exit = QAction("❌ 退出系统", self)
         action_exit.triggered.connect(self.close)
         toolbar.addAction(action_exit)
