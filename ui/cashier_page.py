@@ -46,10 +46,16 @@ class CashierPage(QWidget):
 
         # --- 搜索结果表格 ---
         self.search_table = QTableWidget()
-        self.search_table.setColumnCount(4)  # v1.4: 移除数量列
-        self.search_table.setHorizontalHeaderLabels(["编号", "名称", "库存", "操作"])
+        self.search_table.setColumnCount(7)  # v2.0: 增加类别、进价、售价列
+        self.search_table.setHorizontalHeaderLabels(["编号", "名称", "类别", "进价", "售价", "库存", "操作"])
         self.search_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        self.search_table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents) # 操作列窄一点
+        # 设置进价和售价列宽度为80px
+        self.search_table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.Fixed)
+        self.search_table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeMode.Fixed)
+        self.search_table.setColumnWidth(3, 80)  # 进价列
+        self.search_table.setColumnWidth(4, 80)  # 售价列
+        # 操作列自适应内容
+        self.search_table.horizontalHeader().setSectionResizeMode(6, QHeaderView.ResizeMode.ResizeToContents)
         self.search_table.verticalHeader().setDefaultSectionSize(45)  # 设置默认行高
         layout.addWidget(self.search_table)
 
@@ -121,12 +127,14 @@ class CashierPage(QWidget):
         for row_idx, p in enumerate(products):
             self.search_table.insertRow(row_idx)
 
-            # 文本信息
+            # v2.0: 扩展列信息 - 添加类别、进价、售价
             self.search_table.setItem(row_idx, 0, QTableWidgetItem(str(p.id)))
             self.search_table.setItem(row_idx, 1, QTableWidgetItem(str(p.name)))
-            self.search_table.setItem(row_idx, 2, QTableWidgetItem(str(p.stock)))
+            self.search_table.setItem(row_idx, 2, QTableWidgetItem(str(p.category)))
+            self.search_table.setItem(row_idx, 3, QTableWidgetItem(f"{p.cost_price:.2f}"))  # 进价
+            self.search_table.setItem(row_idx, 4, QTableWidgetItem(f"{p.sell_price:.2f}"))  # 售价
+            self.search_table.setItem(row_idx, 5, QTableWidgetItem(str(p.stock)))
 
-            # v1.4: 只添加按钮，默认数量为1
             # 创建容器包裹按钮，防止按钮填满单元格
             btn_widget = QWidget()
             btn_layout = QHBoxLayout(btn_widget)
@@ -138,7 +146,7 @@ class CashierPage(QWidget):
             btn.clicked.connect(lambda checked, p=p: self.add_from_search_result(p))
 
             btn_layout.addWidget(btn)
-            self.search_table.setCellWidget(row_idx, 3, btn_widget)
+            self.search_table.setCellWidget(row_idx, 6, btn_widget)  # v2.0: 操作列移到第6列
 
     def add_from_search_result(self, product):
         """从搜索表格点击添加按钮触发 (v1.4: 默认数量为1)"""

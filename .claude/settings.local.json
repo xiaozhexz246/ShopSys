@@ -12,7 +12,9 @@
       "Bash(python:*)",
       "Bash(test -f:*)",
       "Bash(cat:*)",
-      "Bash(test:*)"
+      "Bash(test:*)",
+      "Bash(.venvScriptspython.exe main.py)",
+      "Bash(cmd /c \".venv\\\\Scripts\\\\python.exe main.py\")"
     ]
   }
 }

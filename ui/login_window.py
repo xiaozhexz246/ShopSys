@@ -11,33 +11,43 @@ class LoginWindow(QWidget):
 
     def init_ui(self):
         self.setWindowTitle("超市系统 - 登录")
-        self.setFixedSize(300, 200) # 固定窗口大小
+        self.setFixedSize(360, 450) # v2.0: 稍微调大窗口以适应新间距
 
         # 布局管理器 (垂直布局)
         layout = QVBoxLayout()
+        layout.setContentsMargins(40, 50, 40, 50)  # 设置外边距
+        layout.setSpacing(0)  # v2.0: 改为0，手动控制每个元素间距
 
         # 1. 标题
         title_label = QLabel("欢迎使用")
+        title_label.setObjectName("login_title")
         title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title_label.setStyleSheet("font-size: 18px; font-weight: bold; margin-bottom: 10px;")
         layout.addWidget(title_label)
+        layout.addSpacing(40)  # v2.0: 标题下方间距增加到40px
 
         # 2. 用户名输入框
         self.username_input = QLineEdit()
+        self.username_input.setObjectName("login_input")
         self.username_input.setPlaceholderText("请输入用户名")
+        self.username_input.setFixedHeight(45)
         self.username_input.returnPressed.connect(self.handle_login)  # 回车登录
         layout.addWidget(self.username_input)
+        layout.addSpacing(15)  # v2.0: 输入框之间增加15px间距
 
         # 3. 密码输入框
         self.password_input = QLineEdit()
+        self.password_input.setObjectName("login_input")
         self.password_input.setPlaceholderText("请输入密码")
+        self.password_input.setFixedHeight(45)
         self.password_input.setEchoMode(QLineEdit.EchoMode.Password)  # 隐藏密码字符
         self.password_input.returnPressed.connect(self.handle_login)  # 回车登录
         layout.addWidget(self.password_input)
+        layout.addSpacing(30)  # v2.0: 登录按钮上方增加30px间距
 
         # 4. 登录按钮
         self.login_btn = QPushButton("登录")
-        self.login_btn.setStyleSheet("background-color: #0078d7; color: white; height: 30px;")
+        self.login_btn.setObjectName("login_btn")
+        self.login_btn.setFixedHeight(50)
         self.login_btn.clicked.connect(self.handle_login) # 绑定点击事件
         layout.addWidget(self.login_btn)
 

@@ -250,3 +250,51 @@ QScrollBar::handle:horizontal:hover {
 QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
     width: 0px;
 }
+
+/* ==================== 登录窗口样式 (v2.0 优化) ==================== */
+/* 登录窗口背景 */
+LoginWindow {
+    background-color: #FFFFFF;
+}
+
+/* 登录标题 */
+#login_title {
+    font-size: 24px;
+    font-weight: bold;
+    color: #303133;
+}
+
+/* 登录输入框 - Material Design 风格 */
+#login_input {
+    background-color: #F2F4F7; /* 浅灰背景 */
+    border: 1px solid transparent; /* 占位边框 */
+    border-radius: 6px;
+    padding-left: 15px;
+    font-size: 14px;
+    color: #333;
+}
+
+#login_input:focus {
+    background-color: #FFFFFF;
+    border: 1px solid #409EFF; /* 聚焦时显示蓝框 */
+}
+
+/* 登录按钮 - 渐变风格 */
+#login_btn {
+    /* 稍微斜向的蓝色渐变 */
+    background-color: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #409EFF, stop:1 #2b85e4);
+    border: none;
+    border-radius: 25px; /* 保持胶囊形 */
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    letter-spacing: 4px; /* 增加字间距 */
+}
+
+#login_btn:hover {
+    background-color: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #66b1ff, stop:1 #409EFF);
+}
+
+#login_btn:pressed {
+    padding-top: 2px;
+}
