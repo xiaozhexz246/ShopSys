@@ -34,12 +34,14 @@ class CashierPage(QWidget):
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("输入商品名称关键字 (如: 可乐)...")
         self.search_input.returnPressed.connect(self.perform_search) # 回车搜索
-        
+
         btn_search = QPushButton("搜索")
+        btn_search.setFixedSize(80, 32)
         btn_search.clicked.connect(self.perform_search)
 
         search_bar.addWidget(self.search_input)
         search_bar.addWidget(btn_search)
+        search_bar.addStretch()
         layout.addLayout(search_bar)
 
         # --- 搜索结果表格 ---
@@ -48,6 +50,7 @@ class CashierPage(QWidget):
         self.search_table.setHorizontalHeaderLabels(["编号", "名称", "库存", "操作"])
         self.search_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.search_table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents) # 操作列窄一点
+        self.search_table.verticalHeader().setDefaultSectionSize(35)  # 设置默认行高
         layout.addWidget(self.search_table)
 
         group_box.setLayout(layout)
@@ -74,6 +77,7 @@ class CashierPage(QWidget):
         self.cart_table.setColumnCount(6)  # 增加实付金额列
         self.cart_table.setHorizontalHeaderLabels(["编号", "名称", "单价", "实付金额", "数量", "小计"])
         self.cart_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.cart_table.verticalHeader().setDefaultSectionSize(35)  # 设置默认行高
         # v1.4: 移除 NoEditTriggers，允许编辑数量列
         self.cart_table.setEditTriggers(QAbstractItemView.EditTrigger.DoubleClicked | QAbstractItemView.EditTrigger.EditKeyPressed)
         # 连接 itemChanged 信号以监听数量列的修改
@@ -83,13 +87,15 @@ class CashierPage(QWidget):
         # --- 底部结算栏 ---
         bottom_layout = QHBoxLayout()
         self.total_label = QLabel("总金额: 0.00 元")
-        self.total_label.setStyleSheet("font-size: 20px; color: red; font-weight: bold;")
-        
+        self.total_label.setStyleSheet("font-size: 18px; color: #F56C6C; font-weight: bold;")
+
         btn_clear = QPushButton("清空清单")
+        btn_clear.setFixedSize(100, 35)
         btn_clear.clicked.connect(self.clear_cart)
-        
+
         btn_checkout = QPushButton("确认结算")
-        btn_checkout.setStyleSheet("background-color: #0078d7; color: white; font-weight: bold; padding: 5px 15px;")
+        btn_checkout.setProperty("class", "primary")
+        btn_checkout.setFixedSize(140, 45)
         btn_checkout.clicked.connect(self.handle_checkout)
 
         bottom_layout.addWidget(btn_clear)
@@ -121,10 +127,19 @@ class CashierPage(QWidget):
             self.search_table.setItem(row_idx, 2, QTableWidgetItem(str(p.stock)))
 
             # v1.4: 只添加按钮，默认数量为1
+            # 创建容器包裹按钮，防止按钮填满单元格
+            btn_widget = QWidget()
+            btn_layout = QHBoxLayout(btn_widget)
+            btn_layout.setContentsMargins(5, 2, 5, 2)
+            btn_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
             btn = QPushButton("➕ 添加")
-            btn.setStyleSheet("color: green;")
+            btn.setFixedSize(70, 28)
+            btn.setProperty("class", "primary")
             btn.clicked.connect(lambda checked, p=p: self.add_from_search_result(p))
-            self.search_table.setCellWidget(row_idx, 3, btn)
+
+            btn_layout.addWidget(btn)
+            self.search_table.setCellWidget(row_idx, 3, btn_widget)
 
     def add_from_search_result(self, product):
         """从搜索表格点击添加按钮触发 (v1.4: 默认数量为1)"""

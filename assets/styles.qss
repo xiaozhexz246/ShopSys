@@ -1,0 +1,223 @@
+/* ==================== 全局字体设置 ==================== */
+* {
+    font-family: "Microsoft YaHei", sans-serif;
+    font-size: 10pt;
+}
+
+/* ==================== 通用按钮样式 ==================== */
+QPushButton {
+    background-color: #FFFFFF;
+    border: 1px solid #DCDFE6;
+    border-radius: 4px;
+    color: #606266;
+    min-width: 80px;
+    min-height: 30px;
+    padding: 5px 15px;
+}
+
+QPushButton:hover {
+    border-color: #409EFF;
+    color: #409EFF;
+}
+
+QPushButton:pressed {
+    background-color: #F2F6FC;
+}
+
+QPushButton:disabled {
+    background-color: #F5F7FA;
+    border-color: #E4E7ED;
+    color: #C0C4CC;
+}
+
+/* ==================== Primary Button (强调按钮) ==================== */
+QPushButton[class="primary"] {
+    background-color: #409EFF;
+    border: none;
+    color: #FFFFFF;
+}
+
+QPushButton[class="primary"]:hover {
+    background-color: #66B1FF;
+}
+
+QPushButton[class="primary"]:pressed {
+    background-color: #3A8EE6;
+}
+
+QPushButton[class="primary"]:disabled {
+    background-color: #A0CFFF;
+}
+
+/* ==================== Danger Button (危险按钮) ==================== */
+QPushButton[class="danger"] {
+    background-color: #F56C6C;
+    border: none;
+    color: #FFFFFF;
+}
+
+QPushButton[class="danger"]:hover {
+    background-color: #F78989;
+}
+
+QPushButton[class="danger"]:pressed {
+    background-color: #DD6161;
+}
+
+QPushButton[class="danger"]:disabled {
+    background-color: #FAB6B6;
+}
+
+/* ==================== 输入框样式 ==================== */
+QLineEdit, QSpinBox, QDoubleSpinBox {
+    background-color: #FFFFFF;
+    border: 1px solid #DCDFE6;
+    border-radius: 4px;
+    padding: 5px 10px;
+    color: #606266;
+}
+
+QLineEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus {
+    border-color: #409EFF;
+}
+
+QLineEdit:disabled, QSpinBox:disabled, QDoubleSpinBox:disabled {
+    background-color: #F5F7FA;
+    color: #C0C4CC;
+}
+
+/* ==================== 下拉框样式 ==================== */
+QComboBox {
+    background-color: #FFFFFF;
+    border: 1px solid #DCDFE6;
+    border-radius: 4px;
+    padding: 5px 10px;
+    color: #606266;
+}
+
+QComboBox:hover {
+    border-color: #409EFF;
+}
+
+QComboBox::drop-down {
+    border: none;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #FFFFFF;
+    border: 1px solid #E4E7ED;
+    selection-background-color: #F5F7FA;
+    selection-color: #606266;
+}
+
+/* ==================== 表格样式 ==================== */
+QTableWidget {
+    background-color: #FFFFFF;
+    border: 1px solid #EBEEF5;
+    gridline-color: #EBEEF5;
+    color: #606266;
+}
+
+QTableWidget::item {
+    padding: 5px;
+    border: none;
+}
+
+QTableWidget::item:selected {
+    background-color: #ECF5FF;
+    color: #000000;
+}
+
+QHeaderView::section {
+    background-color: #F5F7FA;
+    border: none;
+    border-bottom: 1px solid #EBEEF5;
+    border-right: 1px solid #EBEEF5;
+    padding: 8px;
+    color: #909399;
+    font-weight: bold;
+}
+
+QHeaderView::section:hover {
+    background-color: #E4E7ED;
+}
+
+/* ==================== 标签样式 ==================== */
+QLabel {
+    color: #303133;
+}
+
+/* ==================== 分组框样式 ==================== */
+QGroupBox {
+    border: 1px solid #DCDFE6;
+    border-radius: 4px;
+    margin-top: 10px;
+    padding-top: 10px;
+    color: #303133;
+    font-weight: bold;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    left: 10px;
+    padding: 0 5px;
+}
+
+/* ==================== 日期选择器样式 ==================== */
+QDateEdit {
+    background-color: #FFFFFF;
+    border: 1px solid #DCDFE6;
+    border-radius: 4px;
+    padding: 5px 10px;
+    color: #606266;
+}
+
+QDateEdit:focus {
+    border-color: #409EFF;
+}
+
+QDateEdit::drop-down {
+    border: none;
+}
+
+/* ==================== 滚动条样式 ==================== */
+QScrollBar:vertical {
+    background-color: #F5F7FA;
+    width: 10px;
+    border-radius: 5px;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #C0C4CC;
+    border-radius: 5px;
+    min-height: 30px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background-color: #909399;
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+QScrollBar:horizontal {
+    background-color: #F5F7FA;
+    height: 10px;
+    border-radius: 5px;
+}
+
+QScrollBar::handle:horizontal {
+    background-color: #C0C4CC;
+    border-radius: 5px;
+    min-width: 30px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background-color: #909399;
+}
+
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+    width: 0px;
+}

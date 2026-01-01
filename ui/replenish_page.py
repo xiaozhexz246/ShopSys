@@ -35,10 +35,12 @@ class ReplenishPage(QWidget):
         self.search_input.returnPressed.connect(self.perform_search)
 
         btn_search = QPushButton("搜索")
+        btn_search.setFixedSize(80, 32)
         btn_search.clicked.connect(self.perform_search)
 
         search_bar.addWidget(self.search_input)
         search_bar.addWidget(btn_search)
+        search_bar.addStretch()
         layout.addLayout(search_bar)
 
         # --- 搜索结果表格 ---
@@ -47,6 +49,7 @@ class ReplenishPage(QWidget):
         self.search_table.setHorizontalHeaderLabels(["编号", "名称", "类别", "当前进价", "当前库存", "操作"])
         self.search_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.search_table.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeMode.ResizeToContents)
+        self.search_table.verticalHeader().setDefaultSectionSize(35)  # 设置默认行高
         # v1.6: 禁止编辑搜索结果表格,防止数据被意外修改
         self.search_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         layout.addWidget(self.search_table)
@@ -65,6 +68,7 @@ class ReplenishPage(QWidget):
         self.cart_table.setHorizontalHeaderLabels(["编号", "名称", "进货数量", "进价", "操作"])
         self.cart_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.cart_table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)
+        self.cart_table.verticalHeader().setDefaultSectionSize(35)  # 设置默认行高
         self.cart_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         layout.addWidget(self.cart_table)
 
@@ -72,10 +76,12 @@ class ReplenishPage(QWidget):
         bottom_layout = QHBoxLayout()
 
         btn_clear = QPushButton("清空清单")
+        btn_clear.setFixedSize(100, 35)
         btn_clear.clicked.connect(self.clear_cart)
 
         btn_confirm = QPushButton("确认进货")
-        btn_confirm.setStyleSheet("background-color: #28a745; color: white; font-weight: bold; padding: 5px 15px;")
+        btn_confirm.setProperty("class", "primary")
+        btn_confirm.setFixedSize(120, 40)
         btn_confirm.clicked.connect(self.handle_confirm)
 
         bottom_layout.addWidget(btn_clear)
@@ -114,11 +120,19 @@ class ReplenishPage(QWidget):
             self.search_table.setItem(row_idx, 3, QTableWidgetItem(f"{p.cost_price:.2f}"))
             self.search_table.setItem(row_idx, 4, QTableWidgetItem(str(p.stock)))
 
-            # 添加到进货单按钮
+            # 添加到进货单按钮 (包裹在容器中)
+            btn_widget = QWidget()
+            btn_layout = QHBoxLayout(btn_widget)
+            btn_layout.setContentsMargins(5, 2, 5, 2)
+            btn_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
             btn = QPushButton("加入进货单")
-            btn.setStyleSheet("color: blue;")
+            btn.setProperty("class", "primary")
+            btn.setFixedSize(95, 28)
             btn.clicked.connect(lambda checked, product=p: self.add_to_cart(product))
-            self.search_table.setCellWidget(row_idx, 5, btn)
+
+            btn_layout.addWidget(btn)
+            self.search_table.setCellWidget(row_idx, 5, btn_widget)
 
     def add_to_cart(self, product):
         """将商品加入待进货清单"""
@@ -171,11 +185,19 @@ class ReplenishPage(QWidget):
             price_spin.valueChanged.connect(lambda value, i=idx: self.update_cost_price(i, value))
             self.cart_table.setCellWidget(idx, 3, price_spin)
 
-            # 删除按钮
+            # 删除按钮 (包裹在容器中)
+            btn_widget = QWidget()
+            btn_layout_cell = QHBoxLayout(btn_widget)
+            btn_layout_cell.setContentsMargins(5, 2, 5, 2)
+            btn_layout_cell.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
             btn_remove = QPushButton("移除")
-            btn_remove.setStyleSheet("color: red;")
+            btn_remove.setProperty("class", "danger")
+            btn_remove.setFixedSize(60, 25)
             btn_remove.clicked.connect(lambda checked, i=idx: self.remove_from_cart(i))
-            self.cart_table.setCellWidget(idx, 4, btn_remove)
+
+            btn_layout_cell.addWidget(btn_remove)
+            self.cart_table.setCellWidget(idx, 4, btn_widget)
 
     def update_quantity(self, cart_index, new_qty):
         """更新进货数量"""

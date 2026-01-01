@@ -78,10 +78,16 @@ class PerishablePage(QWidget):
         layout.addLayout(form_layout)
 
         # --- 登记按钮 ---
+        btn_layout = QHBoxLayout()
+        btn_layout.addStretch()
+
         btn_register = QPushButton("登记批次")
-        btn_register.setStyleSheet("background-color: #28a745; color: white; font-weight: bold; padding: 8px;")
+        btn_register.setProperty("class", "primary")
+        btn_register.setFixedSize(120, 35)
         btn_register.clicked.connect(self.register_batch)
-        layout.addWidget(btn_register)
+
+        btn_layout.addWidget(btn_register)
+        layout.addLayout(btn_layout)
 
         group_box.setLayout(layout)
         parent_layout.addWidget(group_box)  # v1.6: 不使用stretch,固定大小
@@ -95,11 +101,13 @@ class PerishablePage(QWidget):
         btn_layout = QHBoxLayout()
 
         btn_delete = QPushButton("🗑️ 删除选中批次")
-        btn_delete.setStyleSheet("background-color: #dc3545; color: white; font-weight: bold;")
+        btn_delete.setProperty("class", "danger")
+        btn_delete.setFixedSize(130, 32)
         btn_delete.clicked.connect(self.delete_selected_batch)
         btn_layout.addWidget(btn_delete)
 
         btn_refresh = QPushButton("🔄 刷新列表")
+        btn_refresh.setFixedSize(100, 32)
         btn_refresh.clicked.connect(self.load_batches)
         btn_layout.addWidget(btn_refresh)
 
@@ -112,6 +120,7 @@ class PerishablePage(QWidget):
         self.batch_table.setHorizontalHeaderLabels(["商品名称", "生产日期", "保质期(天)", "过期日期", "数量", "状态", "操作"])
         self.batch_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.batch_table.horizontalHeader().setSectionResizeMode(6, QHeaderView.ResizeMode.ResizeToContents)
+        self.batch_table.verticalHeader().setDefaultSectionSize(35)  # 设置默认行高
         # v1.6: 设置表格选择行为
         self.batch_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.batch_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
@@ -242,11 +251,19 @@ class PerishablePage(QWidget):
 
             self.batch_table.setItem(row_idx, 5, status_item)
 
-            # v1.6: 添加编辑按钮
+            # v1.6: 添加编辑按钮 (包裹在容器中)
+            btn_widget = QWidget()
+            btn_layout = QHBoxLayout(btn_widget)
+            btn_layout.setContentsMargins(5, 2, 5, 2)
+            btn_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
             btn_edit = QPushButton("✏️ 编辑")
-            btn_edit.setStyleSheet("background-color: #007bff; color: white;")
+            btn_edit.setProperty("class", "primary")
+            btn_edit.setFixedSize(60, 25)
             btn_edit.clicked.connect(lambda checked, b=batch: self.open_edit_dialog(b))
-            self.batch_table.setCellWidget(row_idx, 6, btn_edit)
+
+            btn_layout.addWidget(btn_edit)
+            self.batch_table.setCellWidget(row_idx, 6, btn_widget)
 
     def delete_selected_batch(self):
         """v1.6: 删除选中的批次"""

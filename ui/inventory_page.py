@@ -19,12 +19,15 @@ class InventoryPage(QWidget):
         btn_layout = QHBoxLayout()
 
         self.btn_add = QPushButton("➕ 新增商品")
-        self.btn_delete = QPushButton("🗑️ 删除选中")
-        self.btn_refresh = QPushButton("🔄 刷新列表")
+        self.btn_add.setProperty("class", "primary")
+        self.btn_add.setFixedSize(110, 32)
 
-        # 美化一下按钮
-        self.btn_add.setStyleSheet("background-color: #28a745; color: white;")
-        self.btn_delete.setStyleSheet("background-color: #dc3545; color: white;")
+        self.btn_delete = QPushButton("🗑️ 删除选中")
+        self.btn_delete.setProperty("class", "danger")
+        self.btn_delete.setFixedSize(110, 32)
+
+        self.btn_refresh = QPushButton("🔄 刷新列表")
+        self.btn_refresh.setFixedSize(100, 32)
 
         btn_layout.addWidget(self.btn_add)
         btn_layout.addWidget(self.btn_delete)
@@ -46,7 +49,7 @@ class InventoryPage(QWidget):
 
         # 进价显示切换按钮
         self.btn_toggle_cost = QPushButton("显示进价")
-        self.btn_toggle_cost.setStyleSheet("background-color: #6c757d; color: white; opacity: 0.6;")  # 低饱和度
+        self.btn_toggle_cost.setFixedSize(100, 32)
         self.btn_toggle_cost.clicked.connect(self.toggle_cost_display)
         btn_layout.addWidget(self.btn_toggle_cost)
 
@@ -60,6 +63,7 @@ class InventoryPage(QWidget):
         self.update_table_headers()
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.table.horizontalHeader().setSectionResizeMode(7, QHeaderView.ResizeMode.ResizeToContents)  # 操作列固定宽度
+        self.table.verticalHeader().setDefaultSectionSize(35)  # 设置默认行高
 
         # 设置表格行为：整行选中、不可编辑
         self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
@@ -131,11 +135,19 @@ class InventoryPage(QWidget):
             if not self.show_cost_price:
                 col += 1
 
-            # v1.6: 编辑按钮始终显示,不受进价显示开关影响
+            # v1.6: 编辑按钮始终显示,不受进价显示开关影响 (包裹在容器中)
+            btn_widget = QWidget()
+            btn_layout_cell = QHBoxLayout(btn_widget)
+            btn_layout_cell.setContentsMargins(5, 2, 5, 2)
+            btn_layout_cell.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
             btn_edit = QPushButton("✏️ 编辑")
-            btn_edit.setStyleSheet("background-color: #007bff; color: white;")
+            btn_edit.setProperty("class", "primary")
+            btn_edit.setFixedSize(60, 25)
             btn_edit.clicked.connect(lambda checked, product=p: self.open_edit_dialog(product))
-            self.table.setCellWidget(row_idx, col, btn_edit)
+
+            btn_layout_cell.addWidget(btn_edit)
+            self.table.setCellWidget(row_idx, col, btn_widget)
 
         # v1.4: 加载完成后重新启用排序
         self.table.setSortingEnabled(True)

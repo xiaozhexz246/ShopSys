@@ -9,12 +9,17 @@ from ui.hidden_page import HiddenPage
 from ui.replenish_page import ReplenishPage
 from ui.perishable_page import PerishablePage
 from services.backup_service import BackupService
+import os
+
 class MainWindow(QMainWindow):
-    def __init__(self,is_hidden_mode=False):
+    def __init__(self, is_hidden_mode=False):
         super().__init__()
         self.is_hidden_mode = is_hidden_mode
-        self.setWindowTitle("超市售货系统 v1.5")
+        self.setWindowTitle("超市售货系统 v1.7")
         self.resize(1000, 600) # 默认大小
+
+        # 加载全局样式表
+        self.load_stylesheet()
 
         # 1. 创建核心容器 (堆叠窗口，用来切换页面)
         self.central_widget = QWidget()
@@ -88,6 +93,18 @@ class MainWindow(QMainWindow):
         action_exit = QAction("❌ 退出系统", self)
         action_exit.triggered.connect(self.close)
         toolbar.addAction(action_exit)
+
+    def load_stylesheet(self):
+        """加载QSS样式表"""
+        qss_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets", "styles.qss")
+        if os.path.exists(qss_path):
+            try:
+                with open(qss_path, "r", encoding="utf-8") as f:
+                    self.setStyleSheet(f.read())
+            except Exception as e:
+                print(f"⚠️ 样式表加载失败: {e}")
+        else:
+            print(f"⚠️ 样式表文件不存在: {qss_path}")
 
     def closeEvent(self, event):
         """窗口关闭事件：执行自动备份"""

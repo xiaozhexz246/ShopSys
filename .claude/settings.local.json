@@ -11,7 +11,8 @@
       "Bash(cmd /c \"dir /S /B *.py\")",
       "Bash(python:*)",
       "Bash(test -f:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(test:*)"
     ]
   }
 }
