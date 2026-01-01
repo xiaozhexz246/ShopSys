@@ -81,7 +81,7 @@ class PerishableService:
     def check_expirations():
         """
         检查所有批次的过期状态
-        :return: 列表，每个元素为字典 {product_name, prod_date, shelf_life, exp_date, quantity, status, days_left}
+        :return: 列表，每个元素为字典 {batch_id, product_name, prod_date, shelf_life, exp_date, quantity, status, days_left}
         """
         session = SessionLocal()
         try:
@@ -106,6 +106,7 @@ class PerishableService:
                     status = "正常"
 
                 result.append({
+                    'batch_id': batch.id,  # v1.6: 添加batch_id用于删除和编辑
                     'product_name': product_name,
                     'production_date': batch.production_date,
                     'shelf_life': batch.shelf_life,
@@ -116,5 +117,58 @@ class PerishableService:
                 })
 
             return result
+        finally:
+            session.close()
+
+    @staticmethod
+    def delete_batch(batch_id):
+        """
+        v1.6: 删除指定批次
+        :param batch_id: 批次ID
+        :return: (success: bool, message: str)
+        """
+        session = SessionLocal()
+        try:
+            batch = session.query(PerishableBatch).filter(PerishableBatch.id == batch_id).first()
+            if not batch:
+                return False, "批次不存在"
+
+            session.delete(batch)
+            session.commit()
+            return True, "批次删除成功"
+        except Exception as e:
+            session.rollback()
+            return False, f"删除失败: {str(e)}"
+        finally:
+            session.close()
+
+    @staticmethod
+    def update_batch(batch_id, production_date, shelf_life, quantity):
+        """
+        v1.6: 更新批次信息
+        :param batch_id: 批次ID
+        :param production_date: 生产日期 (date对象)
+        :param shelf_life: 保质期天数
+        :param quantity: 批次数量
+        :return: (success: bool, message: str)
+        """
+        session = SessionLocal()
+        try:
+            batch = session.query(PerishableBatch).filter(PerishableBatch.id == batch_id).first()
+            if not batch:
+                return False, "批次不存在"
+
+            # 更新字段
+            batch.production_date = production_date
+            batch.shelf_life = shelf_life
+            batch.quantity = quantity
+            # 重新计算过期日期
+            batch.expiration_date = production_date + timedelta(days=shelf_life)
+
+            session.commit()
+            return True, "批次更新成功"
+        except Exception as e:
+            session.rollback()
+            return False, f"更新失败: {str(e)}"
         finally:
             session.close()

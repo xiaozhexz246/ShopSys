@@ -30,7 +30,14 @@ class InventoryPage(QWidget):
         btn_layout.addWidget(self.btn_delete)
         btn_layout.addWidget(self.btn_refresh)
 
-        # 搜索栏
+        # v1.6: 编号精准搜索栏
+        self.search_id_input = QLineEdit()
+        self.search_id_input.setPlaceholderText("输入编号精准搜索...")
+        self.search_id_input.setMaximumWidth(200)
+        self.search_id_input.returnPressed.connect(self.search_by_id)
+        btn_layout.addWidget(self.search_id_input)
+
+        # 名称模糊搜索栏
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("输入商品名称搜索...")
         self.search_input.setMaximumWidth(200)
@@ -120,8 +127,12 @@ class InventoryPage(QWidget):
             self.table.setItem(row_idx, col, stock_item)
             col += 1
 
-            # 添加编辑按钮
-            btn_edit = QPushButton("编辑")
+            # 跳过隐藏列(当不显示进价时)
+            if not self.show_cost_price:
+                col += 1
+
+            # v1.6: 编辑按钮始终显示,不受进价显示开关影响
+            btn_edit = QPushButton("✏️ 编辑")
             btn_edit.setStyleSheet("background-color: #007bff; color: white;")
             btn_edit.clicked.connect(lambda checked, product=p: self.open_edit_dialog(product))
             self.table.setCellWidget(row_idx, col, btn_edit)
@@ -185,6 +196,21 @@ class InventoryPage(QWidget):
                 self.load_data()
             else:
                 QMessageBox.warning(self, "错误", msg)
+
+    def search_by_id(self):
+        """v1.6: 按编号精准搜索商品"""
+        product_id = self.search_id_input.text().strip()
+        if not product_id:
+            self.load_data()
+            return
+
+        # 精准查询
+        product = ProductService.get_product_by_id(product_id)
+        if product:
+            self.load_data([product])
+        else:
+            QMessageBox.warning(self, "提示", f"未找到编号为 {product_id} 的商品")
+            self.load_data([])
 
     def search_products(self):
         """搜索商品"""

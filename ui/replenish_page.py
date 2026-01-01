@@ -47,6 +47,8 @@ class ReplenishPage(QWidget):
         self.search_table.setHorizontalHeaderLabels(["编号", "名称", "类别", "当前进价", "当前库存", "操作"])
         self.search_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.search_table.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeMode.ResizeToContents)
+        # v1.6: 禁止编辑搜索结果表格,防止数据被意外修改
+        self.search_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         layout.addWidget(self.search_table)
 
         group_box.setLayout(layout)
