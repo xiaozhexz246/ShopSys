@@ -57,7 +57,7 @@ class InventoryPage(QWidget):
         self.update_table_headers()
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.table.horizontalHeader().setSectionResizeMode(7, QHeaderView.ResizeMode.ResizeToContents)  # 操作列固定宽度
-        self.table.verticalHeader().setDefaultSectionSize(35)  # 设置默认行高
+        self.table.verticalHeader().setDefaultSectionSize(45)  # 设置默认行高
 
         # 设置表格行为：整行选中、不可编辑
         self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
@@ -132,11 +132,12 @@ class InventoryPage(QWidget):
             # v1.9: 使用扁平按钮样式
             btn_widget = QWidget()
             btn_layout_cell = QHBoxLayout(btn_widget)
-            btn_layout_cell.setContentsMargins(5, 2, 5, 2)
+            btn_layout_cell.setContentsMargins(0, 0, 0, 0)
             btn_layout_cell.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
             btn_edit = QPushButton("编辑")
             btn_edit.setProperty("class", "table-btn")
+            btn_edit.setFlat(True)
             btn_edit.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
             btn_edit.clicked.connect(lambda checked, product=p: self.open_edit_dialog(product))
 

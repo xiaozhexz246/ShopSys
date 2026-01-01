@@ -50,7 +50,7 @@ class CashierPage(QWidget):
         self.search_table.setHorizontalHeaderLabels(["编号", "名称", "库存", "操作"])
         self.search_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.search_table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents) # 操作列窄一点
-        self.search_table.verticalHeader().setDefaultSectionSize(35)  # 设置默认行高
+        self.search_table.verticalHeader().setDefaultSectionSize(45)  # 设置默认行高
         layout.addWidget(self.search_table)
 
         group_box.setLayout(layout)
@@ -77,7 +77,7 @@ class CashierPage(QWidget):
         self.cart_table.setColumnCount(6)  # 增加实付金额列
         self.cart_table.setHorizontalHeaderLabels(["编号", "名称", "单价", "实付金额", "数量", "小计"])
         self.cart_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        self.cart_table.verticalHeader().setDefaultSectionSize(35)  # 设置默认行高
+        self.cart_table.verticalHeader().setDefaultSectionSize(45)  # 设置默认行高
         # v1.4: 移除 NoEditTriggers，允许编辑数量列
         self.cart_table.setEditTriggers(QAbstractItemView.EditTrigger.DoubleClicked | QAbstractItemView.EditTrigger.EditKeyPressed)
         # 连接 itemChanged 信号以监听数量列的修改
@@ -130,12 +130,10 @@ class CashierPage(QWidget):
             # 创建容器包裹按钮，防止按钮填满单元格
             btn_widget = QWidget()
             btn_layout = QHBoxLayout(btn_widget)
-            btn_layout.setContentsMargins(5, 2, 5, 2)
+            btn_layout.setContentsMargins(0, 0, 0, 0)
             btn_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
             btn = QPushButton("添加")
-            btn.setFixedSize(50, 24)
-            btn.setStyleSheet("font-size: 9pt;")
             btn.setProperty("class", "primary")
             btn.clicked.connect(lambda checked, p=p: self.add_from_search_result(p))
 

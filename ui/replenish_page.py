@@ -50,7 +50,7 @@ class ReplenishPage(QWidget):
         self.search_table.setHorizontalHeaderLabels(["编号", "名称", "类别", "当前进价", "当前库存", "操作"])
         self.search_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.search_table.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeMode.ResizeToContents)
-        self.search_table.verticalHeader().setDefaultSectionSize(35)  # 设置默认行高
+        self.search_table.verticalHeader().setDefaultSectionSize(45)  # 设置默认行高
         # v1.6: 禁止编辑搜索结果表格,防止数据被意外修改
         self.search_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         layout.addWidget(self.search_table)
@@ -69,7 +69,7 @@ class ReplenishPage(QWidget):
         self.cart_table.setHorizontalHeaderLabels(["编号", "名称", "进货数量", "进价", "操作"])
         self.cart_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.cart_table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)
-        self.cart_table.verticalHeader().setDefaultSectionSize(35)  # 设置默认行高
+        self.cart_table.verticalHeader().setDefaultSectionSize(45)  # 设置默认行高
         self.cart_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         layout.addWidget(self.cart_table)
 
@@ -124,11 +124,12 @@ class ReplenishPage(QWidget):
             # v1.9: 添加到进货单按钮 - 使用扁平按钮样式
             btn_widget = QWidget()
             btn_layout = QHBoxLayout(btn_widget)
-            btn_layout.setContentsMargins(5, 2, 5, 2)
+            btn_layout.setContentsMargins(0, 0, 0, 0)
             btn_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
             btn = QPushButton("加入")
             btn.setProperty("class", "table-btn")
+            btn.setFlat(True)
             btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
             btn.clicked.connect(lambda checked, product=p: self.add_to_cart(product))
 
@@ -189,11 +190,12 @@ class ReplenishPage(QWidget):
             # v1.9: 删除按钮 - 使用扁平按钮样式（红色系）
             btn_widget = QWidget()
             btn_layout_cell = QHBoxLayout(btn_widget)
-            btn_layout_cell.setContentsMargins(5, 2, 5, 2)
+            btn_layout_cell.setContentsMargins(0, 0, 0, 0)
             btn_layout_cell.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
             btn_remove = QPushButton("删除")
             btn_remove.setProperty("class", "table-btn-danger")
+            btn_remove.setFlat(True)
             btn_remove.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
             btn_remove.clicked.connect(lambda checked, i=idx: self.remove_from_cart(i))
 

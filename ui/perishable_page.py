@@ -57,7 +57,7 @@ class PerishablePage(QWidget):
         self.batch_table.setHorizontalHeaderLabels(["商品名称", "生产日期", "保质期(天)", "过期日期", "数量", "状态", "操作"])
         self.batch_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.batch_table.horizontalHeader().setSectionResizeMode(6, QHeaderView.ResizeMode.ResizeToContents)
-        self.batch_table.verticalHeader().setDefaultSectionSize(35)  # 设置默认行高
+        self.batch_table.verticalHeader().setDefaultSectionSize(45)  # 设置默认行高
         # 设置表格选择行为
         self.batch_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.batch_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
@@ -104,11 +104,12 @@ class PerishablePage(QWidget):
             # v1.9: 添加编辑按钮 - 使用扁平按钮样式
             btn_widget = QWidget()
             btn_layout = QHBoxLayout(btn_widget)
-            btn_layout.setContentsMargins(5, 2, 5, 2)
+            btn_layout.setContentsMargins(0, 0, 0, 0)
             btn_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
             btn_edit = QPushButton("编辑")
             btn_edit.setProperty("class", "table-btn")
+            btn_edit.setFlat(True)
             btn_edit.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
             btn_edit.clicked.connect(lambda checked, b=batch: self.open_edit_dialog(b))
 
