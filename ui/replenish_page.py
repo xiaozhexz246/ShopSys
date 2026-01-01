@@ -3,6 +3,7 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdi
                              QPushButton, QTableWidget, QTableWidgetItem, QHeaderView,
                              QMessageBox, QSpinBox, QAbstractItemView, QGroupBox, QDoubleSpinBox)
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QCursor
 from services.product_service import ProductService
 
 class ReplenishPage(QWidget):
@@ -120,15 +121,15 @@ class ReplenishPage(QWidget):
             self.search_table.setItem(row_idx, 3, QTableWidgetItem(f"{p.cost_price:.2f}"))
             self.search_table.setItem(row_idx, 4, QTableWidgetItem(str(p.stock)))
 
-            # 添加到进货单按钮 (包裹在容器中)
+            # v1.9: 添加到进货单按钮 - 使用扁平按钮样式
             btn_widget = QWidget()
             btn_layout = QHBoxLayout(btn_widget)
             btn_layout.setContentsMargins(5, 2, 5, 2)
             btn_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-            btn = QPushButton("加入进货单")
-            btn.setProperty("class", "primary")
-            btn.setFixedSize(95, 28)
+            btn = QPushButton("加入")
+            btn.setProperty("class", "table-btn")
+            btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
             btn.clicked.connect(lambda checked, product=p: self.add_to_cart(product))
 
             btn_layout.addWidget(btn)
@@ -185,15 +186,15 @@ class ReplenishPage(QWidget):
             price_spin.valueChanged.connect(lambda value, i=idx: self.update_cost_price(i, value))
             self.cart_table.setCellWidget(idx, 3, price_spin)
 
-            # 删除按钮 (包裹在容器中)
+            # v1.9: 删除按钮 - 使用扁平按钮样式（红色系）
             btn_widget = QWidget()
             btn_layout_cell = QHBoxLayout(btn_widget)
             btn_layout_cell.setContentsMargins(5, 2, 5, 2)
             btn_layout_cell.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-            btn_remove = QPushButton("移除")
-            btn_remove.setProperty("class", "danger")
-            btn_remove.setFixedSize(60, 25)
+            btn_remove = QPushButton("删除")
+            btn_remove.setProperty("class", "table-btn-danger")
+            btn_remove.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
             btn_remove.clicked.connect(lambda checked, i=idx: self.remove_from_cart(i))
 
             btn_layout_cell.addWidget(btn_remove)

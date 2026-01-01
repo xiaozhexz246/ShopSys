@@ -1,6 +1,7 @@
 # 文件名: ui/product_dialog.py
 from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QFormLayout, QLineEdit,
                              QDialogButtonBox, QDoubleSpinBox, QSpinBox, QMessageBox, QComboBox)
+from PyQt6.QtCore import Qt
 
 class ProductDialog(QDialog):
     def __init__(self, parent=None, product=None):
@@ -32,7 +33,7 @@ class ProductDialog(QDialog):
         # 1. 定义输入控件
         self.id_input = QLineEdit()
         self.id_input.setPlaceholderText("扫描或输入条码")
-        
+
         self.name_input = QLineEdit()
         self.name_input.setPlaceholderText("商品名称")
 
@@ -101,6 +102,21 @@ class ProductDialog(QDialog):
             self.price_input.setValue(self.product.sell_price)
             self.stock_input.setValue(self.product.stock)
             self.stock_input.setReadOnly(True)  # 编辑模式下库存不可修改（通过进货/出售改变）
+
+    def keyPressEvent(self, event):
+        """重写键盘事件，拦截扫码枪在商品编号框的回车"""
+        # 1. 检测是否是回车键 (支持大键盘 Enter 和小键盘 Return)
+        if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+            # 2. 检查焦点是否在"商品编号"输入框
+            if self.id_input.hasFocus():
+                # 3. 核心：只转移焦点，不提交
+                print("检测到扫码枪回车，拦截提交，跳转焦点")  # debug用
+                self.name_input.setFocus()  # 跳转到下一个框
+                event.accept()  # 标记事件已处理
+                return  # 强制结束，不再传递给父类(QDialog)
+
+        # 4. 其他情况（如在确认按钮上按回车），交给父类处理（即正常提交）
+        super().keyPressEvent(event)
 
     def get_data(self):
         """返回用户输入的数据"""

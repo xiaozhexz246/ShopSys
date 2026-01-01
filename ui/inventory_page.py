@@ -2,6 +2,7 @@
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
                              QTableWidget, QTableWidgetItem, QHeaderView, QMessageBox, QAbstractItemView, QLineEdit)
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QCursor
 from services.product_service import ProductService
 from ui.product_dialog import ProductDialog  # 导入刚才写的弹窗
 
@@ -33,16 +34,9 @@ class InventoryPage(QWidget):
         btn_layout.addWidget(self.btn_delete)
         btn_layout.addWidget(self.btn_refresh)
 
-        # v1.6: 编号精准搜索栏
-        self.search_id_input = QLineEdit()
-        self.search_id_input.setPlaceholderText("输入编号精准搜索...")
-        self.search_id_input.setMaximumWidth(200)
-        self.search_id_input.returnPressed.connect(self.search_by_id)
-        btn_layout.addWidget(self.search_id_input)
-
-        # 名称模糊搜索栏
+        # v1.9: 合并搜索框 - 先按编号精准搜索，未找到则按名称模糊搜索
         self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText("输入商品名称搜索...")
+        self.search_input.setPlaceholderText("输入编号或名称搜索...")
         self.search_input.setMaximumWidth(200)
         self.search_input.textChanged.connect(self.search_products)  # 实时搜索
         btn_layout.addWidget(self.search_input)
@@ -135,15 +129,15 @@ class InventoryPage(QWidget):
             if not self.show_cost_price:
                 col += 1
 
-            # v1.6: 编辑按钮始终显示,不受进价显示开关影响 (包裹在容器中)
+            # v1.9: 使用扁平按钮样式
             btn_widget = QWidget()
             btn_layout_cell = QHBoxLayout(btn_widget)
             btn_layout_cell.setContentsMargins(5, 2, 5, 2)
             btn_layout_cell.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-            btn_edit = QPushButton("✏️ 编辑")
-            btn_edit.setProperty("class", "primary")
-            btn_edit.setFixedSize(60, 25)
+            btn_edit = QPushButton("编辑")
+            btn_edit.setProperty("class", "table-btn")
+            btn_edit.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
             btn_edit.clicked.connect(lambda checked, product=p: self.open_edit_dialog(product))
 
             btn_layout_cell.addWidget(btn_edit)
@@ -209,30 +203,21 @@ class InventoryPage(QWidget):
             else:
                 QMessageBox.warning(self, "错误", msg)
 
-    def search_by_id(self):
-        """v1.6: 按编号精准搜索商品"""
-        product_id = self.search_id_input.text().strip()
-        if not product_id:
-            self.load_data()
-            return
-
-        # 精准查询
-        product = ProductService.get_product_by_id(product_id)
-        if product:
-            self.load_data([product])
-        else:
-            QMessageBox.warning(self, "提示", f"未找到编号为 {product_id} 的商品")
-            self.load_data([])
-
     def search_products(self):
-        """搜索商品"""
+        """v1.9: 合并搜索 - 先按编号精准搜索，未找到则按名称模糊搜索"""
         keyword = self.search_input.text().strip()
         if not keyword:
             # 如果搜索框为空，显示所有商品
             self.load_data()
             return
 
-        # 模糊查询
+        # 第一步: 尝试精准匹配编号
+        product = ProductService.get_product_by_id(keyword)
+        if product:
+            self.load_data([product])
+            return
+
+        # 第二步: 按名称模糊匹配
         products = ProductService.search_products_by_name(keyword)
         self.load_data(products)
 

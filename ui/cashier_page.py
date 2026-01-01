@@ -133,8 +133,9 @@ class CashierPage(QWidget):
             btn_layout.setContentsMargins(5, 2, 5, 2)
             btn_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-            btn = QPushButton("➕ 添加")
-            btn.setFixedSize(70, 28)
+            btn = QPushButton("添加")
+            btn.setFixedSize(50, 24)
+            btn.setStyleSheet("font-size: 9pt;")
             btn.setProperty("class", "primary")
             btn.clicked.connect(lambda checked, p=p: self.add_from_search_result(p))
 
