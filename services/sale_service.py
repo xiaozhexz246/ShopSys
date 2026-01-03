@@ -2,6 +2,7 @@
 from database import SessionLocal
 from models import Product, SaleRecord
 from datetime import datetime
+from services.log_service import LogService
 
 class SaleService:
     @staticmethod
@@ -12,6 +13,11 @@ class SaleService:
         """
         session = SessionLocal()
         try:
+            # v2.2: 收集商品详细信息用于日志记录
+            sale_details = []
+            total_amount = 0
+            total_qty = 0
+
             for item in cart_items:
                 pid = item['id']
                 qty = item['qty']
@@ -44,8 +50,22 @@ class SaleService:
                 )
                 session.add(record)
 
+                # v2.2: 收集商品信息用于日志
+                sale_details.append(f"{product.name}(售价¥{actual_price:.2f}×{qty}件)")
+                total_amount += qty * actual_price
+                total_qty += qty
+
             # 5. 提交事务 (原子操作：要么全成功，要么全失败)
             session.commit()
+
+            # v2.2: 添加详细日志记录
+            detail_str = "、".join(sale_details)
+            LogService.add_log(
+                "收银台",
+                "销售结算",
+                f"订单结算: {detail_str}，共{total_qty}件，总额¥{total_amount:.2f}"
+            )
+
             return True, "结算成功！"
 
         except Exception as e:

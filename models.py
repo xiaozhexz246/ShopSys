@@ -72,3 +72,14 @@ class PerishableBatch(Base):
 
     # 关联到商品表
     product = relationship("Product")
+
+# --- 操作日志表 (v2.2新增) ---
+class OperationLog(Base):
+    __tablename__ = 'operation_logs'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    username = Column(String, nullable=False)   # 操作人 (如: admin)
+    module = Column(String, nullable=False)     # 模块 (如: 易过期管理)
+    action = Column(String, nullable=False)     # 动作 (如: 修改批次)
+    content = Column(String)                    # 详情 (如: 批次#5 数量 10 -> 8)
+    log_time = Column(DateTime, default=datetime.now, index=True) # 时间

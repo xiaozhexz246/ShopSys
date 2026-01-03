@@ -14,7 +14,10 @@
       "Bash(cat:*)",
       "Bash(test:*)",
       "Bash(.venvScriptspython.exe main.py)",
-      "Bash(cmd /c \".venv\\\\Scripts\\\\python.exe main.py\")"
+      "Bash(cmd /c \".venv\\\\Scripts\\\\python.exe main.py\")",
+      "Bash(.venvScriptspython.exe init.py)",
+      "Bash(\".venv\\\\Scripts\\\\python.exe\" init.py)",
+      "Bash(\".venv\\\\Scripts\\\\python.exe\" test_log_system.py)"
     ]
   }
 }

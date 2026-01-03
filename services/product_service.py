@@ -2,6 +2,7 @@
 from database import SessionLocal
 from models import Product, PurchaseRecord
 from datetime import datetime
+from services.log_service import LogService
 
 class ProductService:
     @staticmethod
@@ -30,6 +31,14 @@ class ProductService:
             )
             session.add(new_product)
             session.commit()
+
+            # v2.2: 添加日志记录
+            LogService.add_log(
+                "商品管理",
+                "新增商品",
+                f"新增商品: {name} (编号:{id})"
+            )
+
             return True, "添加成功"
         except Exception as e:
             session.rollback()
@@ -46,8 +55,17 @@ class ProductService:
             # 查找
             product = session.query(Product).filter(Product.id == product_id).first()
             if product:
+                product_name = product.name
                 session.delete(product)
                 session.commit()
+
+                # v2.2: 添加日志记录
+                LogService.add_log(
+                    "商品管理",
+                    "删除商品",
+                    f"删除商品: {product_name} (编号:{product_id})"
+                )
+
                 return True, "删除成功"
             return False, "商品不存在"
         except Exception as e:
@@ -87,6 +105,10 @@ class ProductService:
         """
         session = SessionLocal()
         try:
+            # v2.2: 收集进货详细信息用于日志记录
+            purchase_details = []
+            total_qty = 0
+
             for item in cart_items:
                 product_id = item["product_id"]
                 quantity = item["quantity"]
@@ -113,7 +135,20 @@ class ProductService:
                 )
                 session.add(purchase_record)
 
+                # v2.2: 收集商品信息用于日志
+                purchase_details.append(f"{product.name}(进价¥{cost_price:.2f}×{quantity}件)")
+                total_qty += quantity
+
             session.commit()
+
+            # v2.2: 添加详细日志记录
+            detail_str = "、".join(purchase_details)
+            LogService.add_log(
+                "进货管理",
+                "进货入库",
+                f"进货入库: {detail_str}，共{total_qty}件"
+            )
+
             return True, "进货成功"
         except Exception as e:
             session.rollback()
@@ -148,6 +183,14 @@ class ProductService:
             product.sell_price = price
 
             session.commit()
+
+            # v2.2: 添加日志记录
+            LogService.add_log(
+                "商品管理",
+                "修改商品",
+                f"修改商品: {name} (编号:{product_id}) 进价{cost} 售价{price}"
+            )
+
             return True, "更新成功"
         except Exception as e:
             session.rollback()

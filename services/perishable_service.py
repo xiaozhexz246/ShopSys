@@ -3,6 +3,7 @@ from database import SessionLocal
 from models import PerishableBatch, Product
 from datetime import datetime, timedelta
 from sqlalchemy import desc
+from services.log_service import LogService
 
 class PerishableService:
     @staticmethod
@@ -36,6 +37,14 @@ class PerishableService:
             )
             session.add(batch)
             session.commit()
+
+            # v2.2: 添加日志记录
+            LogService.add_log(
+                "易过期管理",
+                "登记批次",
+                f"新增批次: 商品{product_id} 生产日期{prod_date} 保质期{shelf_life}天 数量{qty}"
+            )
+
             return True, "批次登记成功"
         except Exception as e:
             session.rollback()
@@ -135,6 +144,14 @@ class PerishableService:
 
             session.delete(batch)
             session.commit()
+
+            # v2.2: 添加日志记录
+            LogService.add_log(
+                "易过期管理",
+                "删除批次",
+                f"移除批次ID:{batch_id}"
+            )
+
             return True, "批次删除成功"
         except Exception as e:
             session.rollback()
@@ -166,6 +183,14 @@ class PerishableService:
             batch.expiration_date = production_date + timedelta(days=shelf_life)
 
             session.commit()
+
+            # v2.2: 添加日志记录 (重点: 必须记录被修改的批次ID)
+            LogService.add_log(
+                "易过期管理",
+                "修改批次",
+                f"更新批次ID:{batch_id} 生产日期{production_date} 保质期{shelf_life}天 数量{quantity}"
+            )
+
             return True, "批次更新成功"
         except Exception as e:
             session.rollback()
